@@ -559,16 +559,8 @@ class OGC3DTile extends BABYLON.TransformNode{
         function updateNodeVisibility(metric) {
 
             //doesn't have a mesh content
-            if (!self.hasMeshContent || !self.meshContent) return;         
-
-            // if(self.contentURL == "https://tile.googleapis.com/v1/3dtiles/datasets/CgA/files/UlRPVEYubm9kZWRhdGEucGxhbmV0b2lkPWVhcnRoLG5vZGVfZGF0YV9lcG9jaD05NjAscGF0aD0yMTYxNTM1MTcxNzE1MDQwNTM1LGNhY2hlX3ZlcnNpb249NixhbGlnbm1lbnRfdmVyc2lvbj1ST0NLVFJFRV85NjlfR09PR0xFX0RBVFVNXzIwMjMxMjA1VDA3NTNaX2dlbmVyYXRlZF9hdF8yMDI0MDIyMVQxMzA5Wg.glb?key=AIzaSyB_CT4YNL1WmcIs_38QFlaQB_8dGnCbwGA&session=CKzOipaLgtHG3AEQo6X_rgY"){
-            //     console.log("Id: " + self.uniqueId + "Level: "+self.level+ " metric: " + self.metric + " geo error: "+self.geometricErrorMultiplier * self.geometricError+" child tiles: "+self.childrenTiles.length+" child ready: "+self.childrenTiles.every(child => child.isReady()))
-            //     self.childrenTiles.forEach(child => {
-            //         console.log("Child ID:"+ child.uniqueId +" has conent: "+child.hasMeshContent + " meshcontent: "+child.meshContent + " displayed: "+child.materialVisibility + "mesh: " + child.meshDisplayed);
-            //         console.log("In:" + child.inFrustum+"Level: "+child.level+ " metric: " + child.metric + " geo error: "+child.geometricErrorMultiplier * child.geometricError+" child tiles: "+self.childrenTiles.length+" child ready: "+child.childrenTiles.every(child => child.isReady()))
-            //         console.log("Parent ID:" + child.parent.uniqueId)
-            //     })
-            // }
+            if (!self.hasMeshContent || !self.meshContent) return;      
+            
             if (metric < 0) {
                 self.inFrustum = false;
                 self.changeContentVisibility(!!self.loadOutsideView);
