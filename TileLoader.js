@@ -1,14 +1,64 @@
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.TileLoader = {}));
-})(this, (function (exports) { 'use strict';
+function setIntervalAsync(fn, delay) {
+    let timeout;
 
-// const zUpToYUpMatrix = new THREE.Matrix4();
-// zUpToYUpMatrix.set(1, 0, 0, 0,
-//     0, 0, -1, 0,
-//     0, 1, 0, 0,
-//     0, 0, 0, 1);
+    const run = async () => {
+        const startTime = Date.now();
+        // try {
+            await fn();
+        // } catch (err) {
+            // console.error(err);
+        // } finally {
+            const endTime = Date.now();
+            const elapsedTime = endTime - startTime;
+            const nextDelay = elapsedTime >= delay ? 0 : delay - elapsedTime;
+            timeout = setTimeout(run, nextDelay);
+        // }
+    };
+
+    timeout = setTimeout(run, delay);
+
+    return { clearInterval: () => clearTimeout(timeout) };
+}
+
+async function checkLoaderInitialized(loader) {
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (loader.dracoLoader && loader.ktx2Loader) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 10); // check every 100ms
+    });
+  };
+
+function simplifyPath(main_path) {
+
+    var parts = main_path.split('/'),
+        new_path = [],
+        length = 0;
+    for (var i = 0; i < parts.length; i++) {
+        var part = parts[i];
+        if (part === '.' || part === '' || part === '..') {
+            if (part === '..' && length > 0) {
+                length--;
+            }
+            continue;
+        }
+        new_path[length++] = part;
+    }
+
+    if (length === 0) {
+        return '/';
+    }
+
+    var result = '';
+    for (var i = 0; i < length; i++) {
+        result += '/' + new_path[i];
+    }
+
+    return result;
+}
+
 class LinkedHashMap {
     // Public properties that were on the prototype
     firstNode = null;
@@ -173,13 +223,15 @@ class LinkedHashMap {
 
         if (existingNode.prev) {
             existingNode.prev.next = existingNode.next;
-        } else {
+        }
+        else {
             this.firstNode = existingNode.next;
         }
 
         if (existingNode.next) {
             existingNode.next.prev = existingNode.prev;
-        } else {
+        }
+        else {
             this.lastNode = existingNode.prev;
         }
         
@@ -236,7 +288,8 @@ class LinkedHashMap {
         let space = null;
         if (typeof(beautify) === "boolean" && beautify === true) {
             space = "\t";
-        } else if (!isNaN(beautify) || typeof(beautify) === "string") {
+        }
+        else if (!isNaN(beautify) || typeof(beautify) === "string") {
             space = beautify;
         }
         return JSON.stringify(display, null, space);
@@ -258,7 +311,9 @@ class LinkedHashMap {
  * @param {object} [options.scene] - The scene to load the tiles into.
  * @param {string} [options.proxy] - An optional proxy that tile requests will be directed too as POST requests with the actual tile url in the body of the request.
  */
-class TileLoader {
+export class TileLoader {
+
+
     constructor(options) {
         this.maxCachedItems = 100;
         this.proxy = options.proxy;
@@ -266,8 +321,9 @@ class TileLoader {
             this.meshCallback = options.meshCallback;
             this.pointsCallback = options.pointsCallback;
             if (options.maxCachedItems) this.maxCachedItems = options.maxCachedItems;
+        
             if (!!options && !!options.scene) {
-                this.scene = options.scene;
+                this.scene = options.scene;            
             }
         }
 
@@ -536,20 +592,18 @@ class TileLoader {
                         //             }
                         //         }
                         //     });
-                            const assetBlob = new Blob([arrayBuffer]);
-                            const assetUrl = URL.createObjectURL(assetBlob);
-                            BABYLON.LoadAssetContainerAsync(assetUrl, scene, {pluginExtension: ".glb"}).then(container =>{
-                                self.cache.put(key, container);
-                                self.checkSize();
-                                self.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);   
-                                console.log("downloaded:"+level);      
-                            });                  
+                        const assetBlob = new Blob([arrayBuffer]);
+                        const assetUrl = URL.createObjectURL(assetBlob);
+                        BABYLON.LoadAssetContainerAsync(assetUrl, self.scene, {pluginExtension: ".glb"}).then(container =>{
+                            self.cache.put(key, container);
+                            self.checkSize();
+                            self.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);   
+                            console.log("downloaded:"+level);      
+                        });                  
                                          
                     }).catch((e) => {
                         console.error(e)
                     });
-
-
                 }
             } else if (path.includes(".json")) {
                 downloadFunction = () => {
@@ -668,70 +722,3 @@ class TileLoader {
         // }
     }
 }
-
-function setIntervalAsync(fn, delay) {
-    let timeout;
-
-    const run = async () => {
-        const startTime = Date.now();
-        // try {
-            await fn();
-        // } catch (err) {
-            // console.error(err);
-        // } finally {
-            const endTime = Date.now();
-            const elapsedTime = endTime - startTime;
-            const nextDelay = elapsedTime >= delay ? 0 : delay - elapsedTime;
-            timeout = setTimeout(run, nextDelay);
-        // }
-    };
-
-    timeout = setTimeout(run, delay);
-
-    return { clearInterval: () => clearTimeout(timeout) };
-}
-
-async function checkLoaderInitialized(loader) {
-    return new Promise((resolve) => {
-      const interval = setInterval(() => {
-        if (loader.dracoLoader && loader.ktx2Loader) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 10); // check every 100ms
-    });
-  };
-
-function simplifyPath(main_path) {
-
-    var parts = main_path.split('/'),
-        new_path = [],
-        length = 0;
-    for (var i = 0; i < parts.length; i++) {
-        var part = parts[i];
-        if (part === '.' || part === '' || part === '..') {
-            if (part === '..' && length > 0) {
-                length--;
-            }
-            continue;
-        }
-        new_path[length++] = part;
-    }
-
-    if (length === 0) {
-        return '/';
-    }
-
-    var result = '';
-    for (var i = 0; i < length; i++) {
-        result += '/' + new_path[i];
-    }
-
-    return result;
-}
-
-exports.TileLoader = TileLoader;
-// exports.cartesianToGeodetic = cartesianToGeodetic;
-// exports.geodeticToCartesian = geodeticToCartesian;
-
-}));

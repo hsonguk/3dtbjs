@@ -1,9 +1,3 @@
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.OGC3DTile = {}));
-})(this, (function (exports) { 'use strict';
-
 var averageTime = 0;
 var numTiles = 0;
 var copyrightDiv;
@@ -16,7 +10,7 @@ const tempQuaternion = new BABYLON.Quaternion();
 const copyright = {};
 
 
-class OGC3DTile extends BABYLON.TransformNode{
+export class OGC3DTile extends BABYLON.TransformNode{
 
     /**
      * @param {Object} [properties] - the properties for this tileset
@@ -45,6 +39,7 @@ class OGC3DTile extends BABYLON.TransformNode{
      */
     constructor(properties) {
         super();
+
         const self = this;
         
         this.proxy = properties.proxy;
@@ -68,7 +63,7 @@ class OGC3DTile extends BABYLON.TransformNode{
                 // points.material.sizeAttenuation = true;
             } : properties.pointsCallback;
             tileLoaderOptions.proxy = this.proxy;
-            tileLoaderOptions.scene = properties.scene;
+            tileLoaderOptions.scene = properties.scene;            
             this.tileLoader = new TileLoader(tileLoaderOptions);
         }
         this.displayCopyright = !!properties.displayCopyright;
@@ -947,8 +942,4 @@ function dirname(path) {
     return path.slice(0, end);
   }
   
-exports.OGC3DTile = OGC3DTile;
-// exports.cartesianToGeodetic = cartesianToGeodetic;
-// exports.geodeticToCartesian = geodeticToCartesian;
 
-}));
