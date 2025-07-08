@@ -255,7 +255,8 @@ class LinkedHashMap {
  * @param {function} [options.meshCallback] - A callback to call on newly decoded meshes.
  * @param {function} [options.pointsCallback] - A callback to call on newly decoded points.
  * @param {renderer} [options.renderer] - The renderer, this is required for KTX2 support.
- * @param {sring} [options.proxy] - An optional proxy that tile requests will be directed too as POST requests with the actual tile url in the body of the request.
+ * @param {object} [options.scene] - The scene to load the tiles into.
+ * @param {string} [options.proxy] - An optional proxy that tile requests will be directed too as POST requests with the actual tile url in the body of the request.
  */
 class TileLoader {
     constructor(options) {
@@ -265,7 +266,9 @@ class TileLoader {
             this.meshCallback = options.meshCallback;
             this.pointsCallback = options.pointsCallback;
             if (options.maxCachedItems) this.maxCachedItems = options.maxCachedItems;
-
+            if (!!options && !!options.scene) {
+                this.scene = options.scene;
+            }
         }
 
         // this.gltfLoader = new GLTFLoader();
@@ -535,7 +538,7 @@ class TileLoader {
                         //     });
                             const assetBlob = new Blob([arrayBuffer]);
                             const assetUrl = URL.createObjectURL(assetBlob);
-                            BABYLON.SceneLoader.LoadAssetContainerAsync(assetUrl, undefined, scene, undefined, ".glb").then(container =>{
+                            BABYLON.LoadAssetContainerAsync(assetUrl, scene, {pluginExtension: ".glb"}).then(container =>{
                                 self.cache.put(key, container);
                                 self.checkSize();
                                 self.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);   

@@ -22,8 +22,8 @@
         <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
         <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
         <script src="https://cdn.babylonjs.com/addons/babylonjs.addons.min.js"></script>
-        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
-
+        <script src="./OGC3DTile.js"></script>
+        <script src="./TileLoader.js"></script>
         <style>
             html,
             body {
@@ -252,7 +252,7 @@ function cartesianToGeodetic(x, y, z) {
         const e = Math.sqrt(2 * f - f * f); // eccentricity
 
         const p = Math.sqrt(x * x + z * z); // distance from minor axis
-        const th = Math.atan2(a * y, b * p); // angle between p and y
+        const th = Math.atan2(a * y, b * p); // angle between p and y;
 
         // Calculate longitude
         let lon = Math.atan2(-z, x);
@@ -364,7 +364,7 @@ function initTileset(engine, scene, camera, tileMapNode, apikey) {
             return ogc3DTile;
         }
 
-var createScene = async function () {
+var createScene = function () {
     var scene = new BABYLON.Scene(engine);
     scene.useRightHandedSystem = true;
 
@@ -383,20 +383,7 @@ var createScene = async function () {
     var sphere = BABYLON.Mesh.CreateSphere("sphere1", 16, 2, scene);
 
     // --- Load your library ---
-    try {
-        // Replace with your actual username, repo, version, and path
-        const libURL1 = 'https://cdn.jsdelivr.net/gh/hsonguk/3dtbjs/OGC3DTile.js';
-        const libURL2 = 'https://cdn.jsdelivr.net/gh/hsonguk/3dtbjs@c46e9c7b17cc56466e6d02a2596a81c495263bcd/TileLoader.js';
-    
-        const myLibrary1 = await import(libURL1);
-        const myLibrary2 = await import(libURL2);    
-        
-        // setup ui
-        setupUI(engine, scene, camera);    
-
-    } catch (error) {
-        console.error("Failed to load custom library:", error);
-    }
+    setupUI(engine, scene, camera);    
     // --- End library loading ---
 
     return scene;
@@ -423,9 +410,7 @@ var createScene = async function () {
         if (!engine) throw 'engine should not be null.';
         startRenderLoop(engine, canvas);
         window.scene = createScene();};
-        initFunction().then(() => {scene.then(returnedScene => { sceneToRender = returnedScene; });
-        
-                    });
+        initFunction().then(() => {sceneToRender = scene; });
 
                     // Resize
                     window.addEventListener("resize", function () {
