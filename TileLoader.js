@@ -4,14 +4,14 @@ function setIntervalAsync(fn, delay) {
     const run = async () => {
         const startTime = Date.now();
         // try {
-            await fn();
+        await fn();
         // } catch (err) {
-            // console.error(err);
+        // console.error(err);
         // } finally {
-            const endTime = Date.now();
-            const elapsedTime = endTime - startTime;
-            const nextDelay = elapsedTime >= delay ? 0 : delay - elapsedTime;
-            timeout = setTimeout(run, nextDelay);
+        const endTime = Date.now();
+        const elapsedTime = endTime - startTime;
+        const nextDelay = elapsedTime >= delay ? 0 : delay - elapsedTime;
+        timeout = setTimeout(run, nextDelay);
         // }
     };
 
@@ -22,17 +22,16 @@ function setIntervalAsync(fn, delay) {
 
 async function checkLoaderInitialized(loader) {
     return new Promise((resolve) => {
-      const interval = setInterval(() => {
-        if (loader.dracoLoader && loader.ktx2Loader) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 10); // check every 100ms
+        const interval = setInterval(() => {
+            if (loader.dracoLoader && loader.ktx2Loader) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 10); // check every 100ms
     });
-  };
+}
 
 function simplifyPath(main_path) {
-
     const parts = main_path.split('/');
     const new_path = [];
     let length = 0;
@@ -86,7 +85,7 @@ class LinkedHashMap {
             key: key,
             value: value,
             prev: null,
-            next: null
+            next: null,
         };
     }
 
@@ -94,11 +93,11 @@ class LinkedHashMap {
      * Iterator function similar to native array's "forEach" API.
      */
     each(fn, scope) {
-        if (typeof(fn) !== "function") {
+        if (typeof fn !== 'function') {
             return false;
         }
 
-        const fnScope = (scope || globalThis); // Use globalThis for better environment compatibility
+        const fnScope = scope || globalThis; // Use globalThis for better environment compatibility
         let index = 0;
         let node = this.firstNode;
 
@@ -141,7 +140,7 @@ class LinkedHashMap {
     putAll(values, valueKey) {
         const status = {
             success: true,
-            failures: []
+            failures: [],
         };
 
         if (!values || !valueKey) {
@@ -200,7 +199,7 @@ class LinkedHashMap {
 
     getAll() {
         const values = [];
-        this.each(function(value) {
+        this.each(function (value) {
             values.push(value);
         });
         return values;
@@ -208,7 +207,7 @@ class LinkedHashMap {
 
     getAllKeys() {
         const keys = [];
-        this.each(function(value, key) {
+        this.each(function (value, key) {
             keys.push(key);
         });
         return keys;
@@ -223,20 +222,18 @@ class LinkedHashMap {
 
         if (existingNode.prev) {
             existingNode.prev.next = existingNode.next;
-        }
-        else {
+        } else {
             this.firstNode = existingNode.next;
         }
 
         if (existingNode.next) {
             existingNode.next.prev = existingNode.prev;
-        }
-        else {
+        } else {
             this.lastNode = existingNode.prev;
         }
-        
+
         // Make sure to nullify links from the removed node as well (good practice)
-        // existingNode.prev = null; 
+        // existingNode.prev = null;
         // existingNode.next = null;
 
         delete this._nodes[key]; // Use delete for object properties
@@ -281,15 +278,14 @@ class LinkedHashMap {
 
     toString(beautify) {
         const display = {};
-        this.each(function(value, key) {
+        this.each(function (value, key) {
             display[key] = value;
         });
 
         let space = null;
-        if (typeof(beautify) === "boolean" && beautify === true) {
-            space = "\t";
-        }
-        else if (!isNaN(beautify) || typeof(beautify) === "string") {
+        if (typeof beautify === 'boolean' && beautify === true) {
+            space = '\t';
+        } else if (!isNaN(beautify) || typeof beautify === 'string') {
             space = beautify;
         }
         return JSON.stringify(display, null, space);
@@ -300,7 +296,7 @@ class LinkedHashMap {
  * A Tile loader that manages caching and load order.
  * The cache is an LRU cache and is defined by the number of items it can hold.
  * The actual number of cached items might grow beyond max if all items are in use.
- * 
+ *
  * The load order is designed for optimal perceived loading speed (nearby tiles are refined first).
  *
  * @param {Object} [options] - Optional configuration object.
@@ -312,18 +308,16 @@ class LinkedHashMap {
  * @param {string} [options.proxy] - An optional proxy that tile requests will be directed too as POST requests with the actual tile url in the body of the request.
  */
 export class TileLoader {
-
-
     constructor(options) {
         this.maxCachedItems = 100;
         this.proxy = options.proxy;
-        if (!!options) {
+        if (options) {
             this.meshCallback = options.meshCallback;
             this.pointsCallback = options.pointsCallback;
             if (options.maxCachedItems) this.maxCachedItems = options.maxCachedItems;
-        
-            if (!!options && !!options.scene) {
-                this.scene = options.scene;            
+
+            if (options && options.scene) {
+                this.scene = options.scene;
             }
         }
 
@@ -332,7 +326,7 @@ export class TileLoader {
         // dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/');
         // this.gltfLoader.setDRACOLoader(dracoLoader);
 
-        // if (!!options && !!options.renderer) {
+        // if (options && options.renderer) {
         //     const ktx2Loader = new KTX2Loader();
         //     ktx2Loader.setTranscoderPath('https://storage.googleapis.com/ogc-3d-tiles/basis/').detectSupport(options.renderer);
         //     this.gltfLoader.setKTX2Loader(ktx2Loader);
@@ -345,7 +339,6 @@ export class TileLoader {
         this.cache = new LinkedHashMap();
         this.register = {};
 
-
         this.ready = [];
         this.downloads = [];
         this.nextReady = [];
@@ -353,9 +346,7 @@ export class TileLoader {
         this.init();
     }
 
-
     init() {
-
         const self = this;
         setIntervalAsync(() => {
             self.download();
@@ -365,24 +356,22 @@ export class TileLoader {
             let loaded = 0;
             do {
                 loaded = self.loadBatch();
-            } while (loaded > 0 && (Date.now() - start) <= 0)
-
+            } while (loaded > 0 && Date.now() - start <= 0);
         }, 10);
     }
 
     scheduleDownload(f) {
         this.downloads.unshift(f);
     }
-    
-    download() {
 
+    download() {
         if (this.nextDownloads.length == 0) {
             this.getNextDownloads();
             if (this.nextDownloads.length == 0) return;
         }
         while (this.nextDownloads.length > 0) {
             const nextDownload = this.nextDownloads.shift();
-            if (!!nextDownload && nextDownload.shouldDoDownload()) {
+            if (nextDownload && nextDownload.shouldDoDownload()) {
                 nextDownload.doDownload();
             }
         }
@@ -403,10 +392,10 @@ export class TileLoader {
         const key = data[2];
         const mesh = cache.get(key);
 
-        if (!!mesh && !!register[key]) {
-            Object.keys(register[key]).forEach(tile => {
+        if (mesh && register[key]) {
+            Object.keys(register[key]).forEach((tile) => {
                 const callback = register[key][tile];
-                if (!!callback) {
+                if (callback) {
                     callback(mesh);
                     register[key][tile] = null;
                 }
@@ -423,7 +412,8 @@ export class TileLoader {
                 this.downloads.splice(i, 1);
                 continue;
             }
-            if (!this.downloads[i].distanceFunction) { // if no distance function, must be a json, give absolute priority!
+            if (!this.downloads[i].distanceFunction) {
+                // if no distance function, must be a json, give absolute priority!
                 this.nextDownloads.push(this.downloads.splice(i, 1)[0]);
             }
         }
@@ -440,11 +430,11 @@ export class TileLoader {
             this.nextDownloads.push(closestItem);
 
             const siblings = closestItem.getSiblings();
-        
-            if(!!siblings && siblings.length > 0){
+
+            if (siblings && siblings.length > 0) {
                 for (let i = this.downloads.length - 1; i >= 0; i--) {
-                    if (siblings.find((tile)=>tile.uuid == this.downloads[i].uuid)) {
-                        this.nextDownloads.push(this.downloads.splice(i, 1).pop());                       
+                    if (siblings.find((tile) => tile.uuid == this.downloads[i].uuid)) {
+                        this.nextDownloads.push(this.downloads.splice(i, 1).pop());
                     }
                 }
             }
@@ -455,8 +445,8 @@ export class TileLoader {
         let smallestDistance = Number.MAX_VALUE;
         let closest = -1;
         for (let i = this.ready.length - 1; i >= 0; i--) {
-
-            if (!this.ready[i][3]) {// if no distance function, must be a json, give absolute priority!
+            if (!this.ready[i][3]) {
+                // if no distance function, must be a json, give absolute priority!
                 this.nextReady.push(this.ready.splice(i, 1)[0]);
             }
         }
@@ -465,7 +455,7 @@ export class TileLoader {
             const dist = this.ready[i][3]() * this.ready[i][5];
             if (dist < smallestDistance) {
                 smallestDistance = dist;
-                closest = i
+                closest = i;
             }
         }
         if (closest >= 0) {
@@ -480,181 +470,226 @@ export class TileLoader {
         }
     }
 
-    get(abortController, tileIdentifier, path, callback, distanceFunction, getSiblings, level, sceneZupToYup, meshZupToYup, geometricError) {
+    get(
+        abortController,
+        tileIdentifier,
+        path,
+        callback,
+        distanceFunction,
+        getSiblings,
+        level,
+        sceneZupToYup,
+        meshZupToYup,
+        geometricError
+    ) {
         const self = this;
         const key = simplifyPath(path);
 
         const realAbortController = new AbortController();
-        abortController.signal.addEventListener("abort", () => {
+        abortController.signal.addEventListener('abort', () => {
             if (!self.register[key] || Object.keys(self.register[key]).length == 0) {
                 realAbortController.abort();
             }
-        })
+        });
 
-        if (!path.includes(".b3dm") && !path.includes(".json") && !path.includes(".gltf") && !path.includes(".glb")) {
-            console.error("the 3DTiles cache can only be used to load B3DM, gltf and json data");
+        if (!path.includes('.b3dm') && !path.includes('.json') && !path.includes('.gltf') && !path.includes('.glb')) {
+            console.error('the 3DTiles cache can only be used to load B3DM, gltf and json data');
             return;
         }
         if (!self.register[key]) {
             self.register[key] = {};
         }
-        if (!!self.register[key][tileIdentifier]) {
-            console.error(" a tile should only be loaded once");
+        if (self.register[key][tileIdentifier]) {
+            console.error(' a tile should only be loaded once');
         }
         self.register[key][tileIdentifier] = callback;
 
         const cachedObject = self.cache.get(key);
-        if (!!cachedObject) {
-            console.log("using cache");
+        if (cachedObject) {
+            console.log('using cache');
             this.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);
         } else if (Object.keys(self.register[key]).length == 1) {
             let downloadFunction;
-            if (path.includes(".b3dm")) {
+            if (path.includes('.b3dm')) {
                 downloadFunction = () => {
                     let fetchFunction;
                     if (!self.proxy) {
                         fetchFunction = () => {
                             return fetch(path, { signal: realAbortController.signal });
-                        }
+                        };
                     } else {
                         fetchFunction = () => {
-                            return fetch(self.proxy,
-                                {
-                                    method: 'POST',
-                                    body: path,
-                                    signal: realAbortController.signal
-                                }
-                            );
-                        }
+                            return fetch(self.proxy, {
+                                method: 'POST',
+                                body: path,
+                                signal: realAbortController.signal,
+                            });
+                        };
                     }
-                    fetchFunction().then(result => {
-                        if (!result.ok) {
-                            console.error("could not load tile with path : " + path)
-                            throw new Error(`couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`);
-                        }
-                        return result.arrayBuffer();
-
-                    }).then(resultArrayBuffer => {
-                        return this.b3dmDecoder.parseB3DM(resultArrayBuffer, self.meshCallback, sceneZupToYup, meshZupToYup);
-                    }).then(mesh => {
-                        self.cache.put(key, mesh);
-                        self.checkSize();
-                        this.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);
-                    }).catch((e) => {
-                        console.error(e)
-                    });
-                }
-            } else if (path.includes(".glb") || path.includes(".gltf")) {
-                downloadFunction = () => {
-                    let fetchFunction;
-                    if (!self.proxy) {
-                        fetchFunction = () => {
-                            return fetch(path, { signal: realAbortController.signal });
-                        }
-                    } else {
-                        fetchFunction = () => {
-                            return fetch(self.proxy,
-                                {
-                                    method: 'POST',
-                                    body: path,
-                                    signal: realAbortController.signal
-                                }
+                    fetchFunction()
+                        .then((result) => {
+                            if (!result.ok) {
+                                console.error('could not load tile with path : ' + path);
+                                throw new Error(
+                                    `couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`
+                                );
+                            }
+                            return result.arrayBuffer();
+                        })
+                        .then((resultArrayBuffer) => {
+                            return this.b3dmDecoder.parseB3DM(
+                                resultArrayBuffer,
+                                self.meshCallback,
+                                sceneZupToYup,
+                                meshZupToYup
                             );
-                        }
-                    }
-                    fetchFunction().then(result => {
-                        if (!result.ok) {
-                            console.error("could not load tile with path : " + path)
-                            throw new Error(`couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`);
-                        }
-                        return result.arrayBuffer();
-                    }).then(async arrayBuffer => {
-                        // await checkLoaderInitialized(this.gltfLoader);
-                        // this.gltfLoader.parse(arrayBuffer, null, gltf => {
-                        //     gltf.scene.asset = gltf.asset;
-                        //     if (sceneZupToYup) {
-                        //         gltf.scene.applyMatrix4(zUpToYUpMatrix);
-                        //     }
-                        //     gltf.scene.traverse((o) => {
-                                
-                        //         if (o.isMesh) {
-                        //             if (meshZupToYup) {
-                        //                 o.applyMatrix4(zUpToYUpMatrix);
-                        //             }
-                        //             if (!!self.meshCallback) {
-                        //                 self.meshCallback(o);
-                        //             }
-                        //         }
-                        //         if (o.isPoints) {
-                                    
-                        //             if (!!self.pointsCallback) {
-                        //                 self.pointsCallback(o);
-                        //             }
-                        //         }
-                        //     });
-                        const assetBlob = new Blob([arrayBuffer]);
-                        const assetUrl = URL.createObjectURL(assetBlob);
-                        BABYLON.LoadAssetContainerAsync(assetUrl, self.scene, {pluginExtension: ".glb"}).then(container =>{
-                            self.cache.put(key, container);
+                        })
+                        .then((mesh) => {
+                            self.cache.put(key, mesh);
                             self.checkSize();
-                            self.meshReceived(self.cache, self.register, key, distanceFunction, getSiblings, level, tileIdentifier);   
-                            console.log("downloaded:"+level);      
-                        });                  
-                                         
-                    }).catch((e) => {
-                        console.error(e)
-                    });
-                }
-            } else if (path.includes(".json")) {
+                            this.meshReceived(
+                                self.cache,
+                                self.register,
+                                key,
+                                distanceFunction,
+                                getSiblings,
+                                level,
+                                tileIdentifier
+                            );
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                };
+            } else if (path.includes('.glb') || path.includes('.gltf')) {
                 downloadFunction = () => {
                     let fetchFunction;
                     if (!self.proxy) {
                         fetchFunction = () => {
                             return fetch(path, { signal: realAbortController.signal });
-                        }
+                        };
                     } else {
                         fetchFunction = () => {
-                            return fetch(self.proxy,
-                                {
-                                    method: 'POST',
-                                    body: path,
-                                    signal: realAbortController.signal
+                            return fetch(self.proxy, {
+                                method: 'POST',
+                                body: path,
+                                signal: realAbortController.signal,
+                            });
+                        };
+                    }
+                    fetchFunction()
+                        .then((result) => {
+                            if (!result.ok) {
+                                console.error('could not load tile with path : ' + path);
+                                throw new Error(
+                                    `couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`
+                                );
+                            }
+                            return result.arrayBuffer();
+                        })
+                        .then(async (arrayBuffer) => {
+                            // await checkLoaderInitialized(this.gltfLoader);
+                            // this.gltfLoader.parse(arrayBuffer, null, gltf => {
+                            //     gltf.scene.asset = gltf.asset;
+                            //     if (sceneZupToYup) {
+                            //         gltf.scene.applyMatrix4(zUpToYUpMatrix);
+                            //     }
+                            //     gltf.scene.traverse((o) => {
+
+                            //         if (o.isMesh) {
+                            //             if (meshZupToYup) {
+                            //                 o.applyMatrix4(zUpToYUpMatrix);
+                            //             }
+                            //             if (self.meshCallback) {
+                            //                 self.meshCallback(o);
+                            //             }
+                            //         }
+                            //         if (o.isPoints) {
+
+                            //             if (self.pointsCallback) {
+                            //                 self.pointsCallback(o);
+                            //             }
+                            //         }
+                            //     });
+                            const assetBlob = new Blob([arrayBuffer]);
+                            const assetUrl = URL.createObjectURL(assetBlob);
+                            BABYLON.LoadAssetContainerAsync(assetUrl, self.scene, { pluginExtension: '.glb' }).then(
+                                (container) => {
+                                    self.cache.put(key, container);
+                                    self.checkSize();
+                                    self.meshReceived(
+                                        self.cache,
+                                        self.register,
+                                        key,
+                                        distanceFunction,
+                                        getSiblings,
+                                        level,
+                                        tileIdentifier
+                                    );
+                                    console.log('downloaded:' + level);
                                 }
                             );
-                        }
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                };
+            } else if (path.includes('.json')) {
+                downloadFunction = () => {
+                    let fetchFunction;
+                    if (!self.proxy) {
+                        fetchFunction = () => {
+                            return fetch(path, { signal: realAbortController.signal });
+                        };
+                    } else {
+                        fetchFunction = () => {
+                            return fetch(self.proxy, {
+                                method: 'POST',
+                                body: path,
+                                signal: realAbortController.signal,
+                            });
+                        };
                     }
-                    fetchFunction().then(result => {
-                        if (!result.ok) {
-                            console.error("could not load tile with path : " + path)
-                            throw new Error(`couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`);
-                        }
-                        return result.json();
-
-                    }).then(json => {
-                        self.cache.put(key, json);
-                        self.checkSize();
-                        self.meshReceived(self.cache, self.register, key);
-                    }).catch((e) => {
-                        console.error(e)
-                    });
-                }
+                    fetchFunction()
+                        .then((result) => {
+                            if (!result.ok) {
+                                console.error('could not load tile with path : ' + path);
+                                throw new Error(
+                                    `couldn't load "${path}". Request failed with status ${result.status} : ${result.statusText}`
+                                );
+                            }
+                            return result.json();
+                        })
+                        .then((json) => {
+                            self.cache.put(key, json);
+                            self.checkSize();
+                            self.meshReceived(self.cache, self.register, key);
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                };
             }
             this.scheduleDownload({
-                "shouldDoDownload": () => {
-                    return !abortController.signal.aborted && !!self.register[key] && Object.keys(self.register[key]).length > 0;
+                shouldDoDownload: () => {
+                    return (
+                        !abortController.signal.aborted &&
+                        self.register[key] &&
+                        Object.keys(self.register[key]).length > 0
+                    );
                 },
-                "doDownload": downloadFunction,
-                "distanceFunction": distanceFunction,
-                "getSiblings": getSiblings,
-                "level": level,
-                "uuid": tileIdentifier
-            })
+                doDownload: downloadFunction,
+                distanceFunction: distanceFunction,
+                getSiblings: getSiblings,
+                level: level,
+                uuid: tileIdentifier,
+            });
         }
     }
 
     invalidate(path, tileIdentifier) {
         const key = simplifyPath(path);
-        if (!!this.register[key]) {
+        if (this.register[key]) {
             delete this.register[key][tileIdentifier];
         }
     }
@@ -667,16 +702,16 @@ export class TileLoader {
         const cacheSize = self.cache.size();
         let sizeToRemove = cacheSize - self.maxCachedItems;
         const entryToRemove = [];
-        if(sizeToRemove > 0){
-            self.cache.each(function(entry) {
-				const reg = self.register[entry.key];
-                if (!!reg) {
+        if (sizeToRemove > 0) {
+            self.cache.each(function (entry) {
+                const reg = self.register[entry.key];
+                if (reg) {
                     if (sizeToRemove > 0 && Object.keys(reg).length == 0) {
                         entryToRemove.push(entry);
                         sizeToRemove--;
                     }
                 }
-		    });
+            });
 
             entryToRemove.forEach((entry) => {
                 self.cache.remove(entry.key);
@@ -689,7 +724,7 @@ export class TileLoader {
         //     i++;
         //     const entry = self.cache.head();
         //     const reg = self.register[entry.key];
-        //     if (!!reg) {
+        //     if (reg) {
         //         if (Object.keys(reg).length > 0) {
         //             self.cache.remove(entry.key);
         //             self.cache.put(entry.key, entry.value);

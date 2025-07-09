@@ -1,3 +1,5 @@
+import { TileLoader } from "./TileLoader.js";
+
 let averageTime = 0;
 let numTiles = 0;
 let copyrightDiv;
@@ -39,7 +41,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
     constructor(properties) {
         super();
         const self = this;
-        
+
         this.proxy = properties.proxy;
         this.yUp = properties.yUp;
         this.displayErrors = properties.displayErrors;
@@ -48,28 +50,34 @@ export class OGC3DTile extends BABYLON.TransformNode {
             this.queryParams = { ...properties.queryParams };
         }
         this.uuid = uuidv4();
-        if (!!properties.tileLoader) {
+        if (properties.tileLoader) {
             this.tileLoader = properties.tileLoader;
         } else {
             const tileLoaderOptions = {};
-            tileLoaderOptions.meshCallback = !properties.meshCallback ? mesh => {
-                // mesh.material.wireframe = false;
-                // mesh.material.side = THREE.DoubleSide;
-            } : properties.meshCallback;
-            tileLoaderOptions.pointsCallback = !properties.pointsCallback ? points => {
-                // points.material.size = 0.1;
-                // points.material.sizeAttenuation = true;
-            } : properties.pointsCallback;
+            tileLoaderOptions.meshCallback = !properties.meshCallback
+                ? (mesh) => {
+                      // mesh.material.wireframe = false;
+                      // mesh.material.side = THREE.DoubleSide;
+                  }
+                : properties.meshCallback;
+            tileLoaderOptions.pointsCallback = !properties.pointsCallback
+                ? (points) => {
+                      // points.material.size = 0.1;
+                      // points.material.sizeAttenuation = true;
+                  }
+                : properties.pointsCallback;
             tileLoaderOptions.proxy = this.proxy;
             tileLoaderOptions.scene = properties.scene;
             this.tileLoader = new TileLoader(tileLoaderOptions);
         }
-        this.displayCopyright = !!properties.displayCopyright;
+        this.displayCopyright = properties.displayCopyright;
         // set properties general to the entire tileset
-        this.geometricErrorMultiplier = !!properties.geometricErrorMultiplier ? properties.geometricErrorMultiplier : 1.0;
+        this.geometricErrorMultiplier = properties.geometricErrorMultiplier
+            ? properties.geometricErrorMultiplier
+            : 1.0;
 
         this.scene = properties.scene;
-        this.renderer = properties.renderer;        
+        this.renderer = properties.renderer;
         this.rootNode = properties.rootNode;
         this.meshCallback = properties.meshCallback;
         this.loadOutsideView = properties.loadOutsideView;
@@ -98,27 +106,27 @@ export class OGC3DTile extends BABYLON.TransformNode {
         // Custom inspector properties.
         this.inspectableCustomProperties = [
             {
-                label: "My BoundingVolume",
-                propertyName: "boundingVolume",
-                type: BABYLON.InspectableType.String
+                label: 'My BoundingVolume',
+                propertyName: 'boundingVolume',
+                type: BABYLON.InspectableType.String,
             },
             {
-                label: "My Metric",
-                propertyName: "metric",
-                type: BABYLON.InspectableType.String
+                label: 'My Metric',
+                propertyName: 'metric',
+                type: BABYLON.InspectableType.String,
             },
             {
-                label: "My geometricError",
-                propertyName: "geometricError",
-                type: BABYLON.InspectableType.String
+                label: 'My geometricError',
+                propertyName: 'geometricError',
+                type: BABYLON.InspectableType.String,
             },
             {
-                label: "My key",
-                propertyName: "contentURL",
-                type: BABYLON.InspectableType.String
-            }
+                label: 'My key',
+                propertyName: 'contentURL',
+                type: BABYLON.InspectableType.String,
+            },
         ];
-        
+
         this.json; // the json corresponding to this tile
         this.materialVisibility = false;
         this.inFrustum = true;
@@ -127,83 +135,95 @@ export class OGC3DTile extends BABYLON.TransformNode {
         this.hasUnloadedJSONContent = false; // true when the provided json has a content field pointing to a JSON file that is not yet loaded
         this.centerModel = properties.centerModel;
         this.abortController = new AbortController();
-        this.name = "Level" + this.level;
+        this.name = 'Level' + this.level;
 
-        if (!!properties.json) { // If this tile is created as a child of another tile, properties.json is not null
+        if (properties.json) {
+            // If this tile is created as a child of another tile, properties.json is not null
             self.setup(properties);
             if (properties.onLoadCallback) properties.onLoadCallback(self);
-
-        } else if (properties.url) { // If only the url to the tileset.json is provided
-            console.log("url:"+properties.url)
+        } else if (properties.url) {
+            // If only the url to the tileset.json is provided
+            console.log('url:' + properties.url);
             let url = properties.url;
             if (self.queryParams) {
-                let props = "";
+                let props = '';
                 for (let key in self.queryParams) {
-                    if (self.queryParams.hasOwnProperty(key)) { 
-                        props += "&" + key + "=" + self.queryParams[key];
+                    if (Object.prototype.hasOwnProperty.call(self.queryParams, key)) {
+                        props += '&' + key + '=' + self.queryParams[key];
                     }
                 }
-                if (url.includes("?")) {
+                if (url.includes('?')) {
                     url += props;
                 } else {
-                    url += "?" + props.substring(1);
+                    url += '?' + props.substring(1);
                 }
             }
-            console.log("url:"+properties.url)
+            console.log('url:' + properties.url);
             let fetchFunction;
             if (self.proxy) {
                 fetchFunction = () => {
-                    return fetch(self.proxy,
-                        {
-                            method: 'POST',
-                            body: url,
-                            signal: self.abortController.signal
-                        }
-                    );
-                }
+                    return fetch(self.proxy, {
+                        method: 'POST',
+                        body: url,
+                        signal: self.abortController.signal,
+                    });
+                };
             } else {
                 fetchFunction = () => {
-                    console.log("url:"+url)
+                    console.log('url:' + url);
 
                     return fetch(url, { signal: self.abortController.signal });
-                }
+                };
             }
-            fetchFunction().then(result => {
-                if (!result.ok) {
-                    throw new Error(`couldn't load "${properties.url}". Request failed with status ${result.status} : ${result.statusText}`);
-                }
-                result.json().then(json => {
-
-                    self.setup({ rootPath: dirname(properties.url), json: json });
-                    if (properties.onLoadCallback) properties.onLoadCallback(self);
-                    if (!!self.centerModel) {
-                        const tempSphere = BABYLON.BoundingSphere.CreateFromCenterAndRadius(new BABYLON.Vector3(0, 0, 0), 1);
-                        if (self.boundingVolume instanceof BBO.BBO) {
-                            // box
-                            tempSphere.copy(self.boundingVolume.sphere);
-                        } else if (self.boundingVolume instanceof BABYLON.BoundingSphere) {
-                            //sphere
-                            tempSphere.copy(self.boundingVolume);
-                        }
-
-                        //tempSphere.applyMatrix4(self.matrixWorld);
-                        if (!!this.json.boundingVolume.region) {
-                            this.transformWGS84ToCartesian(
-                                (this.json.boundingVolume.region[0] + this.json.boundingVolume.region[2]) * 0.5,
-                                (this.json.boundingVolume.region[1] + this.json.boundingVolume.region[3]) * 0.5,
-                                (this.json.boundingVolume.region[4] + this.json.boundingVolume.region[5]) * 0.5,
-                                OGC3DTile.#tempVec1);
-
-                            OGC3DTile.#tempQuaternion.setFromUnitVectors(OGC3DTile.#tempVec1.normalize(), OGC3DTile.#upVector.normalize());
-                            self.applyQuaternion(OGC3DTile.#tempQuaternion);
-                        }
-
-                        self.translateX(-tempSphere.center.x * self.scale.x);
-                        self.translateY(-tempSphere.center.y * self.scale.y);
-                        self.translateZ(-tempSphere.center.z * self.scale.z);
+            fetchFunction()
+                .then((result) => {
+                    if (!result.ok) {
+                        throw new Error(
+                            `couldn't load "${properties.url}". Request failed with status ${result.status} : ${result.statusText}`
+                        );
                     }
+                    result.json().then((json) => {
+                        self.setup({ rootPath: dirname(properties.url), json: json });
+                        if (properties.onLoadCallback) properties.onLoadCallback(self);
+                        if (self.centerModel) {
+                            const tempSphere = BABYLON.BoundingSphere.CreateFromCenterAndRadius(
+                                new BABYLON.Vector3(0, 0, 0),
+                                1
+                            );
+                            // if (self.boundingVolume instanceof BBO.BBO) {
+                            //     // box
+                            //     tempSphere.copy(self.boundingVolume.sphere);
+                            // } else 
+                            if (self.boundingVolume instanceof BABYLON.BoundingSphere) {
+                                //sphere
+                                tempSphere.copy(self.boundingVolume);
+                            }
+
+                            //tempSphere.applyMatrix4(self.matrixWorld);
+                            if (this.json.boundingVolume.region) {
+                                this.transformWGS84ToCartesian(
+                                    (this.json.boundingVolume.region[0] + this.json.boundingVolume.region[2]) * 0.5,
+                                    (this.json.boundingVolume.region[1] + this.json.boundingVolume.region[3]) * 0.5,
+                                    (this.json.boundingVolume.region[4] + this.json.boundingVolume.region[5]) * 0.5,
+                                    OGC3DTile.#tempVec1
+                                );
+
+                                OGC3DTile.#tempQuaternion.setFromUnitVectors(
+                                    OGC3DTile.#tempVec1.normalize(),
+                                    OGC3DTile.#upVector.normalize()
+                                );
+                                self.applyQuaternion(OGC3DTile.#tempQuaternion);
+                            }
+
+                            self.translateX(-tempSphere.center.x * self.scale.x);
+                            self.translateY(-tempSphere.center.y * self.scale.y);
+                            self.translateZ(-tempSphere.center.z * self.scale.z);
+                        }
+                    });
+                })
+                .catch((e) => {
+                    if (self.displayErrors) showError(e);
                 });
-            }).catch(e => {if(self.displayErrors) showError(e)});
         }
     }
 
@@ -213,8 +233,8 @@ export class OGC3DTile extends BABYLON.TransformNode {
         // console.log("geometricError:"+properties.json.root.geometricError)
         // console.log("transform:"+properties.json.root.transform)
         // console.log("boundingVolume:"+properties.json.root.boundingVolume.box)
-        
-        if (!!properties.json.root) {
+
+        if (properties.json.root) {
             this.json = properties.json.root;
             if (!this.json.refine) this.json.refine = properties.json.refine;
             if (!this.json.geometricError) this.json.geometricError = properties.json.geometricError;
@@ -223,24 +243,24 @@ export class OGC3DTile extends BABYLON.TransformNode {
         } else {
             this.json = properties.json;
         }
-        this.rootPath = !!properties.json.rootPath ? properties.json.rootPath : properties.rootPath;
-        
+        this.rootPath = properties.json.rootPath ? properties.json.rootPath : properties.rootPath;
+
         // decode refine
-        if (!!this.json.refine) {
+        if (this.json.refine) {
             this.refine = this.json.refine;
         } else {
             this.refine = properties.parentRefine;
         }
         // decode geometric error
-        if (!!this.json.geometricError) {
+        if (this.json.geometricError) {
             this.geometricError = this.json.geometricError;
         } else {
             this.geometricError = properties.parentGeometricError;
         }
 
         // decode transform
-        if (!!this.json.transform && !this.centerModel) {
-            console.log("transform:"+properties.json.transform)
+        if (this.json.transform && !this.centerModel) {
+            console.log('transform:' + properties.json.transform);
             let mat = BABYLON.Matrix().FromArray(this.json.transform);
             this.setPreTransformMatrix(mat);
         }
@@ -248,8 +268,8 @@ export class OGC3DTile extends BABYLON.TransformNode {
         // decode volume
         const worldMatrix = this.computeWorldMatrix(true);
         // console.log("worldMatrix: "+worldMatrix)
-        if (!!this.json.boundingVolume) {
-            if (!!this.json.boundingVolume.box) {  
+        if (this.json.boundingVolume) {
+            if (this.json.boundingVolume.box) {
                 const values = this.json.boundingVolume.box;
                 const e1 = new BABYLON.Vector3(values[3], values[4], values[5]);
                 const halfWidth = e1.length();
@@ -258,35 +278,41 @@ export class OGC3DTile extends BABYLON.TransformNode {
                 const e3 = new BABYLON.Vector3(values[9], values[10], values[11]);
                 const halfDepth = e3.length();
 
-                const radius = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight + halfDepth * halfDepth);       
-                const center = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(values[0], values[2], -values[1]), worldMatrix);
+                const radius = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight + halfDepth * halfDepth);
+                const center = BABYLON.Vector3.TransformCoordinates(
+                    new BABYLON.Vector3(values[0], values[2], -values[1]),
+                    worldMatrix
+                );
 
                 this.boundingVolume = BABYLON.BoundingSphere.CreateFromCenterAndRadius(center, radius);
-
-            } else if (!!this.json.boundingVolume.region) {
+            } else if (this.json.boundingVolume.region) {
                 const region = this.json.boundingVolume.region;
                 this.transformWGS84ToCartesian(region[0], region[1], region[4], OGC3DTile.#tempVec1);
                 this.transformWGS84ToCartesian(region[2], region[3], region[5], OGC3DTile.#tempVec2);
                 OGC3DTile.#tempVec1 = BABYLON.Vector3.Lerp(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2, 0.5);
-                this.boundingVolume = BABYLON.CreateFromCenterAndRadius(OGC3DTile.#tempVec1, BABYLON.Vector3.Distance(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2));
-
-            } else if (!!this.json.boundingVolume.sphere) {
+                this.boundingVolume = BABYLON.CreateFromCenterAndRadius(
+                    OGC3DTile.#tempVec1,
+                    BABYLON.Vector3.Distance(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2)
+                );
+            } else if (this.json.boundingVolume.sphere) {
                 const sphere = this.json.boundingVolume.sphere;
-                this.boundingVolume = BABYLON.BoundingSphere.CreateFromCenterAndRadius(new BABYLON.Vector3(sphere[0], sphere[1], sphere[2]), sphere[3]); 
-
+                this.boundingVolume = BABYLON.BoundingSphere.CreateFromCenterAndRadius(
+                    new BABYLON.Vector3(sphere[0], sphere[1], sphere[2]),
+                    sphere[3]
+                );
             } else {
                 this.boundingVolume = properties.parentBoundingVolume;
-
             }
         } else {
             this.boundingVolume = properties.parentBoundingVolume;
         }
 
         // console.log("content:"+this.json.content)
-        if (!!this.json.content) { //if there is a content, json or otherwise, schedule it to be loaded 
-            if (!!this.json.content.uri && this.json.content.uri.includes("json")) {
+        if (this.json.content) {
+            //if there is a content, json or otherwise, schedule it to be loaded
+            if (this.json.content.uri && this.json.content.uri.includes('json')) {
                 this.hasUnloadedJSONContent = true;
-            } else if (!!this.json.content.url && this.json.content.url.includes("json")) {
+            } else if (this.json.content.url && this.json.content.url.includes('json')) {
                 this.hasUnloadedJSONContent = true;
             } else {
                 this.hasMeshContent = true;
@@ -302,8 +328,8 @@ export class OGC3DTile extends BABYLON.TransformNode {
         }
 
         const rootUrl = new URL(root);
-        let rootParts = rootUrl.pathname.split('/').filter(p => p !== '');
-        let relativeParts = relative.split('/').filter(p => p !== '');
+        let rootParts = rootUrl.pathname.split('/').filter((p) => p !== '');
+        let relativeParts = relative.split('/').filter((p) => p !== '');
 
         for (let i = 1; i <= rootParts.length; i++) {
             if (i >= relativeParts.length) break;
@@ -316,7 +342,6 @@ export class OGC3DTile extends BABYLON.TransformNode {
                 break;
             }
         }
-
 
         while (relativeParts.length > 0 && relativeParts[0] === '..') {
             rootParts.pop();
@@ -342,140 +367,143 @@ export class OGC3DTile extends BABYLON.TransformNode {
     load() {
         const self = this;
         if (self.deleted) return;
-        if (!!self.json.content) {
+        if (self.json.content) {
             let url;
-            if (!!self.json.content.uri) {
+            if (self.json.content.uri) {
                 url = self.json.content.uri;
-            } else if (!!self.json.content.url) {
+            } else if (self.json.content.url) {
                 url = self.json.content.url;
             }
             const urlRegex = /^(?:http|https|ftp|tcp|udp):\/\/\S+/;
 
-            if (urlRegex.test(self.rootPath)) { // url
+            if (urlRegex.test(self.rootPath)) {
+                // url
 
                 if (!urlRegex.test(url)) {
                     url = self.assembleURL(self.rootPath, url);
                 }
-            } else { //path
-                if (path.isAbsolute(self.rootPath)) {
-                    url = self.rootPath + path.sep + url;
-                }
-            }
+            } 
             url = self.extractQueryParams(url, self.queryParams);
             if (self.queryParams) {
-                let props = "";
+                let props = '';
                 for (let key in self.queryParams) {
-                    if (self.queryParams.hasOwnProperty(key)) { // This check is necessary to skip properties from the object's prototype chain
-                        props += "&" + key + "=" + self.queryParams[key];
+                    if (Object.prototype.hasOwnProperty.call(self.queryParams, key)) {
+                        // This check is necessary to skip properties from the object's prototype chain
+                        props += '&' + key + '=' + self.queryParams[key];
                     }
                 }
-                if (url.includes("?")) {
+                if (url.includes('?')) {
                     url += props;
                 } else {
-                    url += "?" + props.substring(1);
+                    url += '?' + props.substring(1);
                 }
             }
 
-            if (!!url) {
-                if (url.includes(".b3dm") || url.includes(".glb") || url.includes(".gltf")) {
+            if (url) {
+                if (url.includes('.b3dm') || url.includes('.glb') || url.includes('.gltf')) {
                     self.contentURL = url;
                     // console.log("loading:"+url)
-                    try{
-                        self.tileLoader.get(self.abortController, this.uuid, url, mesh => {
-                            if (!!self.deleted) return;
-                            
-                            if(mesh.asset && mesh.asset.copyright){
-                                container.asset.copyright.split(';').forEach(s=>{
-                                    if(!!copyright[s]){
-                                        copyright[s]++;
-                                    }else{
-                                        copyright[s] = 1;
+                    try {
+                        self.tileLoader.get(
+                            self.abortController,
+                            this.uuid,
+                            url,
+                            (mesh) => {
+                                if (self.deleted) return;
+
+                                if (mesh.asset && mesh.asset.copyright) {
+                                    mesh.asset.copyright.split(';').forEach((s) => {
+                                        if (copyright[s]) {
+                                            copyright[s]++;
+                                        } else {
+                                            copyright[s] = 1;
+                                        }
+                                    });
+                                    if (self.displayCopyright) {
+                                        updateCopyrightLabel();
                                     }
-                                });
-                                if(self.displayCopyright){
-                                    updateCopyrightLabel();
-                                } 
-                            }
-                         
-                            if (mesh) {            
-                     
-                                mesh.meshes.forEach(m => {
-                                    m.alwaysSelectAsActiveMesh = true
-                                })
-                                mesh.materials.forEach(m => {
-                                    m.freeze();
-                                })    
+                                }
 
-                                // self.add(mesh);
-                                // self.updateWorldMatrix(false, true);
-                                // mesh.layers.disable(0);                          
-                                // const tileroot = mesh.meshes[1];
-                                // tileroot.parent = null;
-                                // mesh.meshes[0].dispose();
+                                if (mesh) {
+                                    mesh.meshes.forEach((m) => {
+                                        m.alwaysSelectAsActiveMesh = true;
+                                    });
+                                    mesh.materials.forEach((m) => {
+                                        m.freeze();
+                                    });
 
-                                // tileroot.setEnabled(false);
-                                // mesh.addAllToScene();
-                                // tileroot.setParent(self);    
-                                // mesh.rootNodes[0].setEnabled(false);    
-                                // mesh.addAllToScene();  
-                                // mesh.rootNodes[0].parent = self;                     
-                                self.meshContent = mesh;                
-                            } 
-                            
-                        }, !self.cameraOnLoad ? () => 0 : () => {
-                            return self.calculateDistanceToCamera(self.cameraOnLoad);
-                        }, () => { 
-                            // if current tile is 10 times farther than the camera radius, choose not the load the sliblings
-                            if(self.calculateDistanceToCamera(self.cameraOnLoad) > 10 * self.cameraOnLoad.radius) return [];
-                            return self.getSiblings()
-                        },
+                                    // self.add(mesh);
+                                    // self.updateWorldMatrix(false, true);
+                                    // mesh.layers.disable(0);
+                                    // const tileroot = mesh.meshes[1];
+                                    // tileroot.parent = null;
+                                    // mesh.meshes[0].dispose();
+
+                                    // tileroot.setEnabled(false);
+                                    // mesh.addAllToScene();
+                                    // tileroot.setParent(self);
+                                    // mesh.rootNodes[0].setEnabled(false);
+                                    // mesh.addAllToScene();
+                                    // mesh.rootNodes[0].parent = self;
+                                    self.meshContent = mesh;
+                                }
+                            },
+                            !self.cameraOnLoad
+                                ? () => 0
+                                : () => {
+                                      return self.calculateDistanceToCamera(self.cameraOnLoad);
+                                  },
+                            () => {
+                                // if current tile is 10 times farther than the camera radius, choose not the load the sliblings
+                                if (self.calculateDistanceToCamera(self.cameraOnLoad) > 10 * self.cameraOnLoad.radius)
+                                    return [];
+                                return self.getSiblings();
+                            },
                             self.level,
-                            !!self.json.boundingVolume.region?false : self.yUp === undefined || self.yUp,
-                            !!self.json.boundingVolume.region,
+                            self.json.boundingVolume.region ? false : self.yUp === undefined || self.yUp,
+                            self.json.boundingVolume.region,
                             self.geometricError
                         );
-                    }catch(e){
-                        if(self.displayErrors) showError(e)
+                    } catch (e) {
+                        if (self.displayErrors) showError(e);
                     }
-                    
-                } else if (url.includes(".json")) {
-                    self.tileLoader.get(self.abortController, this.uuid, url, json => {
-                        if (!!self.deleted) return;
+                } else if (url.includes('.json')) {
+                    self.tileLoader.get(self.abortController, this.uuid, url, (json) => {
+                        if (self.deleted) return;
                         if (!self.json.children) self.json.children = [];
                         json.rootPath = dirname(url);
                         self.json.children.push(json);
                         delete self.json.content;
                         self.hasUnloadedJSONContent = false;
                     });
-
                 }
-
             }
         }
     }
 
     dispose() {
-        if(!!this.meshContent && !!this.meshContent.asset && this.meshContent.asset.copyright){
-            this.meshContent.asset.copyright.split(';').forEach(s=>{
-                if(!!copyright[s]){
+        if (this.meshContent && this.meshContent.asset && this.meshContent.asset.copyright) {
+            this.meshContent.asset.copyright.split(';').forEach((s) => {
+                if (copyright[s]) {
                     copyright[s]--;
                 }
             });
-            if(self.displayCopyright){
+            if (self.displayCopyright) {
                 updateCopyrightLabel();
             }
         }
 
         this.changeContentVisibility(false);
-        this.childrenTiles.forEach(tile => tile.dispose());
+        this.childrenTiles.forEach((tile) => tile.dispose());
         this.childrenTiles = [];
         this.deleted = true;
 
-        if (!!this.contentURL) {
+        if (this.contentURL) {
             this.tileLoader.invalidate(this.contentURL, this.uuid);
         }
 
-        if (!!this.abortController) { // abort tile request
+        if (this.abortController) {
+            // abort tile request
             this.abortController.abort();
         }
 
@@ -484,10 +512,10 @@ export class OGC3DTile extends BABYLON.TransformNode {
         // const descendants = this.getDescendants(false);
         // console.log("Childern: "+descendants.length)
         // descendants.forEach((element) => {
-        //     if (!!element.contentURL) {
+        //     if (element.contentURL) {
         //         self.tileLoader.invalidate(element.contentURL, element.uuid);
         //     }
-        //     if (!!element.abortController) { // abort tile request
+        //     if (element.abortController) { // abort tile request
         //         element.abortController.abort();
         //     }
         //     console.log("Level:"+this.level+"Name: "+element.name + "ID: "+this.uniqueIdSearch +"contentURL: "+element.contentURL+" uuid: "+element.uuid+" level: "+element.level+"abortController: "+element.abortController)
@@ -499,49 +527,54 @@ export class OGC3DTile extends BABYLON.TransformNode {
     }
 
     disposeChildren() {
-        this.childrenTiles.forEach(tile => tile.dispose());
+        this.childrenTiles.forEach((tile) => tile.dispose());
         this.childrenTiles = [];
         // self.children = [];
-        // if (!!self.meshContent) self.children.push(self.meshContent);
+        // if (self.meshContent) self.children.push(self.meshContent);
     }
 
     update(camera) {
-         
         const self = this;
-        const visibilityBeforeUpdate = self.materialVisibility;        
+        const visibilityBeforeUpdate = self.materialVisibility;
         // console.log("boundingVolume: "+ self.boundingVolume)
         // console.log("geometricError: "+ self.geometricError)
 
-        if (!!self.boundingVolume && !!self.geometricError) {         
-            self.metric = self.calculateUpdateMetric(camera);         
+        if (self.boundingVolume && self.geometricError) {
+            self.metric = self.calculateUpdateMetric(camera);
         }
-        self.childrenTiles.forEach(child => child.update(camera));
+        self.childrenTiles.forEach((child) => child.update(camera));
 
         // console.log("metric: "+self.metric)
         updateNodeVisibility(self.metric);
         updateTree(self.metric);
         trimTree(self.metric, visibilityBeforeUpdate);
 
-
         function updateTree(metric) {
             // If this tile does not have mesh content but it has children
             if (metric < 0 && self.hasMeshContent) return;
 
-            if (self.occlusionCullingService && self.hasMeshContent && !self.occlusionCullingService.hasID(self.colorID)) {
+            if (
+                self.occlusionCullingService &&
+                self.hasMeshContent &&
+                !self.occlusionCullingService.hasID(self.colorID)
+            ) {
                 return;
             }
 
-            if (!self.hasMeshContent || (metric < self.geometricErrorMultiplier * self.geometricError && !!self.meshContent)) {
-                
-                if (!!self.json && !!self.json.children) {// && self.childrenTiles.length != childrenLength){//self.json.children.length) {
+            if (
+                !self.hasMeshContent ||
+                (metric < self.geometricErrorMultiplier * self.geometricError && self.meshContent)
+            ) {
+                if (self.json && self.json.children) {
+                    // && self.childrenTiles.length != childrenLength){//self.json.children.length) {
                     let childrenLength = 0;
-                    self.json.children.forEach(childJSON => {
+                    self.json.children.forEach((childJSON) => {
                         if (childJSON.root || childJSON.children || childJSON.content) {
                             childrenLength++;
                         }
                     });
 
-                    if(self.childrenTiles.length != childrenLength){
+                    if (self.childrenTiles.length != childrenLength) {
                         loadJsonChildren();
                     }
                     return;
@@ -550,49 +583,49 @@ export class OGC3DTile extends BABYLON.TransformNode {
         }
 
         function updateNodeVisibility(metric) {
-
             //doesn't have a mesh content
-            if (!self.hasMeshContent || !self.meshContent) return;      
-            
+            if (!self.hasMeshContent || !self.meshContent) return;
+
             if (metric < 0) {
                 self.inFrustum = false;
-                self.changeContentVisibility(!!self.loadOutsideView);
-            } 
-            else {
-                    self.inFrustum = true;                
+                self.changeContentVisibility(self.loadOutsideView);
+            } else {
+                self.inFrustum = true;
 
-                    // has no children
-                    if (self.childrenTiles.length == 0) {
-                        self.changeContentVisibility(true);
+                // has no children
+                if (self.childrenTiles.length == 0) {
+                    self.changeContentVisibility(true);
+                } else if (metric >= self.geometricErrorMultiplier * self.geometricError) {
+                    // Ideal LOD or before ideal lod
+                    self.changeContentVisibility(true);
+                } else {
+                    // Ideal LOD is past this one
+                    // if children are visible and have been displayed, can be hidden
+                    if (self.refine == 'REPLACE' && self.childrenTiles.every((child) => child.isReady())) {
+                        self.changeContentVisibility(false);
                     }
-                    else if (metric >= self.geometricErrorMultiplier * self.geometricError) { // Ideal LOD or before ideal lod
-                        self.changeContentVisibility(true);
-                    } 
-                    else { // Ideal LOD is past this one
-                        // if children are visible and have been displayed, can be hidden
-                        if(self.refine == "REPLACE" && self.childrenTiles.every(child => child.isReady())) {
-                            self.changeContentVisibility(false);
-                        }
-                    }
-            }            
+                }
+            }
         }
 
         function trimTree(metric, visibilityBeforeUpdate) {
             if (!self.hasMeshContent) return;
 
-            if (!self.inFrustum) { // outside frustum
+            if (!self.inFrustum) {
+                // outside frustum
                 self.disposeChildren();
                 // updateNodeVisibility(metric);
                 return;
             }
 
-            if (self.occlusionCullingService &&
+            if (
+                self.occlusionCullingService &&
                 !visibilityBeforeUpdate &&
                 self.hasMeshContent &&
                 self.meshContent &&
                 self.meshDisplayed &&
-                self.areAllChildrenLoadedAndHidden()) {
-
+                self.areAllChildrenLoadedAndHidden()
+            ) {
                 self.disposeChildren();
                 // updateNodeVisibility(metric);
                 return;
@@ -606,9 +639,8 @@ export class OGC3DTile extends BABYLON.TransformNode {
         }
 
         function loadJsonChildren() {
-
-            self.json.children.forEach(childJSON => {
-                if(!childJSON.root && !childJSON.children && !childJSON.content ){
+            self.json.children.forEach((childJSON) => {
+                if (!childJSON.root && !childJSON.children && !childJSON.content) {
                     return;
                 }
 
@@ -633,7 +665,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
                     centerModel: false,
                     yUp: self.yUp,
                     displayErrors: self.displayErrors,
-                    displayCopyright: self.displayCopyright
+                    displayCopyright: self.displayCopyright,
                 });
                 self.childrenTiles.push(childTile);
                 // self.add(childTile);
@@ -644,7 +676,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
     areAllChildrenLoadedAndHidden() {
         let allLoadedAndHidden = true;
         const self = this;
-        this.childrenTiles.every(child => {
+        this.childrenTiles.every((child) => {
             if (child.hasMeshContent) {
                 if (child.childrenTiles.length > 0) {
                     allLoadedAndHidden = false;
@@ -652,7 +684,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
                 }
                 if (!child.inFrustum) {
                     return true;
-                };
+                }
                 if (!child.materialVisibility || child.meshDisplayed) {
                     allLoadedAndHidden = false;
                     return false;
@@ -685,9 +717,9 @@ export class OGC3DTile extends BABYLON.TransformNode {
             return false;
         }
         // if this tile has no mesh content or if it's marked as visible false, look at children
-        if ((!this.hasMeshContent || !this.meshContent || !this.materialVisibility)) {
+        if (!this.hasMeshContent || !this.meshContent || !this.materialVisibility) {
             if (this.childrenTiles.length > 0) {
-                return this.childrenTiles.every(child => child.isReady());
+                return this.childrenTiles.every((child) => child.isReady());
                 // let allChildrenReady = true;
                 // this.childrenTiles.every(child => {
                 //     if (!child.isReady()) {
@@ -740,12 +772,12 @@ export class OGC3DTile extends BABYLON.TransformNode {
         if (self.materialVisibility == visibility) {
             return;
         }
-        self.materialVisibility = visibility
+        self.materialVisibility = visibility;
         self.meshDisplayed = true;
     }
 
     calculateUpdateMetric(camera) {
-        // ////// return -1 if not in frustum    
+        // ////// return -1 if not in frustum
         // if (this.boundingVolume instanceof OBB.OBB) {
         //     // box
         //     // OGC3DTile.#tempSphere.copy(this.boundingVolume.sphere);
@@ -756,7 +788,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
         //         BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix())
         //     );
         //     if (!inOriginalCameraFrustum) return -1;
-        // } else 
+        // } else
         if (this.boundingVolume instanceof BABYLON.BoundingSphere) {
             let tempSphere = this.boundingVolume;
             const inOriginalCameraFrustum = tempSphere.isInFrustum(
@@ -764,22 +796,25 @@ export class OGC3DTile extends BABYLON.TransformNode {
             );
             if (!inOriginalCameraFrustum) return -1;
         } else {
-            console.error("unsupported shape");
-            return -1
+            console.error('unsupported shape');
+            return -1;
         }
 
         /////// return metric based on geometric error and distance
-        const distance = Math.max(0, BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius);
-        
+        const distance = Math.max(
+            0,
+            BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius
+        );
+
         if (distance == 0) {
             return 0;
         }
-        const scale = 1; //this.matrixWorld.getMaxScaleOnAxis();       
+        const scale = 1; //this.matrixWorld.getMaxScaleOnAxis();
         let aspect = 1;
-        if (!!this.renderer) {
+        if (this.renderer) {
             // this.renderer.getDrawingBufferSize(OGC3DTile.#rendererSize);
             OGC3DTile.#rendererSize.x = this.renderer.getRenderWidth(true);
-            OGC3DTile.#rendererSize.y = this.renderer.getRenderHeight(true);       
+            OGC3DTile.#rendererSize.y = this.renderer.getRenderHeight(true);
             aspect = this.renderer.getScreenAspectRatio();
         }
         let s = OGC3DTile.#rendererSize.y;
@@ -799,12 +834,12 @@ export class OGC3DTile extends BABYLON.TransformNode {
         const tiles = [];
         if (!self.parentTile) return tiles;
         let p = self.parentTile;
-        while (!p.hasMeshContent && !!p.parentTile) {
+        while (!p.hasMeshContent && p.parentTile) {
             p = p.parentTile;
         }
-        p.childrenTiles.forEach(child => {
-            if (!!child && child != self) {
-                while (!child.hasMeshContent && !!child.childrenTiles[0]) {
+        p.childrenTiles.forEach((child) => {
+            if (child && child != self) {
+                while (!child.hasMeshContent && child.childrenTiles[0]) {
                     child = child.childrenTiles[0];
                 }
                 tiles.push(child);
@@ -819,32 +854,34 @@ export class OGC3DTile extends BABYLON.TransformNode {
         //     // OGC3DTile.#tempSphere.copy(this.boundingVolume.sphere);
         //     // OGC3DTile.#tempSphere.applyMatrix(this.matrixWorld);
         //     // //if (!frustum.intersectsSphere(OGC3DTile.#tempSphere)) return -1;
-        //     OGC3DTile.#tempSphere = this.boundingVolume.sphere;        
-        // } else 
+        //     OGC3DTile.#tempSphere = this.boundingVolume.sphere;
+        // } else
         if (this.boundingVolume instanceof BABYLON.BoundingSphere) {
-            let tempSphere = this.boundingVolume;          
-        }
-        else {
-            console.error("unsupported shape")
+            let tempSphere = this.boundingVolume;
+        } else {
+            console.error('unsupported shape');
         }
 
-        return Math.max(0, BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius);
+        return Math.max(
+            0,
+            BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius
+        );
     }
 
     setGeometricErrorMultiplier(geometricErrorMultiplier) {
         this.geometricErrorMultiplier = geometricErrorMultiplier;
-        this.childrenTiles.forEach(child => child.setGeometricErrorMultiplier(geometricErrorMultiplier));
+        this.childrenTiles.forEach((child) => child.setGeometricErrorMultiplier(geometricErrorMultiplier));
     }
 
     transformWGS84ToCartesian(lon, lat, h, sfct) {
         const a = 6378137.0;
         const e = 0.006694384442042;
-        const N = a / (Math.sqrt(1.0 - (e * Math.pow(Math.sin(lat), 2))));
+        const N = a / Math.sqrt(1.0 - e * Math.pow(Math.sin(lat), 2));
         const cosLat = Math.cos(lat);
         const cosLon = Math.cos(lon);
         const sinLat = Math.sin(lat);
         const sinLon = Math.sin(lon);
-        const nPh = (N + h);
+        const nPh = N + h;
         const x = nPh * cosLat * cosLon;
         const y = nPh * cosLat * sinLon;
         const z = (0.993305615557957 * N + h) * sinLat;
@@ -855,7 +892,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
 
 function showError(error) {
     // Create a new div element
-    const errorDiv = document.createElement("div");
+    const errorDiv = document.createElement('div');
 
     // Set its text content
     errorDiv.textContent = error;
@@ -874,25 +911,26 @@ function showError(error) {
     document.body.appendChild(errorDiv);
 
     // After 3 seconds, remove the error message
-    setTimeout(function() {
+    setTimeout(function () {
         errorDiv.remove();
     }, 8000);
 }
 
-function updateCopyrightLabel(){
+function updateCopyrightLabel() {
     // Create a new div
-    if(!copyrightDiv){
+    if (!copyrightDiv) {
         copyrightDiv = document.createElement('div');
     }
 
     // Join the array elements with a comma and a space
-    let list = "";
-    for(let key in copyright) {
-        if(copyright.hasOwnProperty(key) && copyright[key] > 0) { // This checks if the key is actually part of the object and not its prototype.
-            list+= key+", ";
+    let list = '';
+    for (let key in copyright) {
+        if (Object.prototype.hasOwnProperty.call(copyright, key) && copyright[key] > 0) {
+            // This checks if the key is actually part of the object and not its prototype.
+            list += key + ', ';
         }
     }
-    
+
     // Set the text content of the div
     copyrightDiv.textContent = list;
 
@@ -901,17 +939,18 @@ function updateCopyrightLabel(){
     copyrightDiv.style.bottom = '20px';
     copyrightDiv.style.left = '20px';
     copyrightDiv.style.color = 'white';
-    copyrightDiv.style.textShadow = '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+    copyrightDiv.style.textShadow =
+        '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
     copyrightDiv.style.padding = '10px';
     copyrightDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'; // semi-transparent black background
-    
+
     // Append the div to the body of the document
     document.body.appendChild(copyrightDiv);
 }
 
 function uuidv4() {
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
+        (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
     );
 }
 
@@ -919,25 +958,23 @@ function dirname(path) {
     // assertPath(path);
     if (path.length === 0) return '.';
     let code = path.charCodeAt(0);
-    const hasRoot = code === 47 /*/*/;
+    const hasRoot = code === 47; /*/*/
     let end = -1;
     let matchedSlash = true;
     for (let i = path.length - 1; i >= 1; --i) {
-      code = path.charCodeAt(i);
-      if (code === 47 /*/*/) {
-          if (!matchedSlash) {
-            end = i;
-            break;
-          }
+        code = path.charCodeAt(i);
+        if (code === 47 /*/*/) {
+            if (!matchedSlash) {
+                end = i;
+                break;
+            }
         } else {
-        // We saw the first non-path separator
-        matchedSlash = false;
-      }
+            // We saw the first non-path separator
+            matchedSlash = false;
+        }
     }
 
     if (end === -1) return hasRoot ? '/' : '.';
     if (hasRoot && end === 1) return '//';
     return path.slice(0, end);
-  }
-  
-
+}
