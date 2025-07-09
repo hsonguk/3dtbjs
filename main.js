@@ -59,15 +59,15 @@ function setupUI(engine, scene, camera) {
 
     // Latitude Input
     const latInput = createInputRow(mainPanel, "Latitude:", "latInput", "e.g., 40.7128");
-    latInput.text = "51.50073844249350"; // Default value
+    latInput.text = "41.850157";//"51.50073844249350"; // Default value
 
     // Longitude Input
     const lonInput = createInputRow(mainPanel, "Longitude:", "lonInput", "e.g., -74.0060");
-    lonInput.text = "-0.12462623169077370"; // Default value
+    lonInput.text = "78.185370";//"-0.12462623169077370"; // Default value
 
     // Altitude Input
     const altInput = createInputRow(mainPanel, "Altitude:", "altInput", "e.g., 100 (meters)");
-    altInput.text = "300"; // Default value
+    altInput.text = "4000";//"300"; // Default value
 
     // Key Input
     const keyInput = createInputRow(mainPanel, "API Key:", "keyInput", "Enter your key", false);

@@ -33,11 +33,11 @@ async function checkLoaderInitialized(loader) {
 
 function simplifyPath(main_path) {
 
-    var parts = main_path.split('/'),
-        new_path = [],
-        length = 0;
-    for (var i = 0; i < parts.length; i++) {
-        var part = parts[i];
+    const parts = main_path.split('/');
+    const new_path = [];
+    let length = 0;
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
         if (part === '.' || part === '' || part === '..') {
             if (part === '..' && length > 0) {
                 length--;
@@ -51,8 +51,8 @@ function simplifyPath(main_path) {
         return '/';
     }
 
-    var result = '';
-    for (var i = 0; i < length; i++) {
+    let result = '';
+    for (let i = 0; i < length; i++) {
         result += '/' + new_path[i];
     }
 
@@ -511,7 +511,7 @@ export class TileLoader {
             let downloadFunction;
             if (path.includes(".b3dm")) {
                 downloadFunction = () => {
-                    var fetchFunction;
+                    let fetchFunction;
                     if (!self.proxy) {
                         fetchFunction = () => {
                             return fetch(path, { signal: realAbortController.signal });
@@ -546,7 +546,7 @@ export class TileLoader {
                 }
             } else if (path.includes(".glb") || path.includes(".gltf")) {
                 downloadFunction = () => {
-                    var fetchFunction;
+                    let fetchFunction;
                     if (!self.proxy) {
                         fetchFunction = () => {
                             return fetch(path, { signal: realAbortController.signal });
@@ -607,7 +607,7 @@ export class TileLoader {
                 }
             } else if (path.includes(".json")) {
                 downloadFunction = () => {
-                    var fetchFunction;
+                    let fetchFunction;
                     if (!self.proxy) {
                         fetchFunction = () => {
                             return fetch(path, { signal: realAbortController.signal });
@@ -665,8 +665,8 @@ export class TileLoader {
         let i = 0;
 
         const cacheSize = self.cache.size();
-        const sizeToRemove = cacheSize - self.maxCachedItems;
-        var entryToRemove = [];
+        let sizeToRemove = cacheSize - self.maxCachedItems;
+        const entryToRemove = [];
         if(sizeToRemove > 0){
             self.cache.each(function(entry) {
 				const reg = self.register[entry.key];

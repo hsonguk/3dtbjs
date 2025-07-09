@@ -1,16 +1,15 @@
-var averageTime = 0;
-var numTiles = 0;
-var copyrightDiv;
-var tempSphere = new BABYLON.BoundingSphere(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 1, 0));
-const tempVec1 = new BABYLON.Vector3(0, 0, 0);
-const tempVec2 = new BABYLON.Vector3(0, 0, 0);
-const upVector = new BABYLON.Vector3(0, 1, 0);
-const rendererSize = new BABYLON.Vector2(1000, 1000);
-const tempQuaternion = new BABYLON.Quaternion();
+let averageTime = 0;
+let numTiles = 0;
+let copyrightDiv;
 const copyright = {};
 
-
-export class OGC3DTile extends BABYLON.TransformNode{
+export class OGC3DTile extends BABYLON.TransformNode {
+    static #tempSphere = new BABYLON.BoundingSphere(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 1, 0));
+    static #tempVec1 = new BABYLON.Vector3(0, 0, 0);
+    static #tempVec2 = new BABYLON.Vector3(0, 0, 0);
+    static #upVector = new BABYLON.Vector3(0, 1, 0);
+    static #rendererSize = new BABYLON.Vector2(1000, 1000);
+    static #tempQuaternion = new BABYLON.Quaternion();
 
     /**
      * @param {Object} [properties] - the properties for this tileset
@@ -39,7 +38,6 @@ export class OGC3DTile extends BABYLON.TransformNode{
      */
     constructor(properties) {
         super();
-
         const self = this;
         
         this.proxy = properties.proxy;
@@ -63,7 +61,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
                 // points.material.sizeAttenuation = true;
             } : properties.pointsCallback;
             tileLoaderOptions.proxy = this.proxy;
-            tileLoaderOptions.scene = properties.scene;            
+            tileLoaderOptions.scene = properties.scene;
             this.tileLoader = new TileLoader(tileLoaderOptions);
         }
         this.displayCopyright = !!properties.displayCopyright;
@@ -137,9 +135,9 @@ export class OGC3DTile extends BABYLON.TransformNode{
 
         } else if (properties.url) { // If only the url to the tileset.json is provided
             console.log("url:"+properties.url)
-            var url = properties.url;
+            let url = properties.url;
             if (self.queryParams) {
-                var props = "";
+                let props = "";
                 for (let key in self.queryParams) {
                     if (self.queryParams.hasOwnProperty(key)) { 
                         props += "&" + key + "=" + self.queryParams[key];
@@ -152,7 +150,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
                 }
             }
             console.log("url:"+properties.url)
-            var fetchFunction;
+            let fetchFunction;
             if (self.proxy) {
                 fetchFunction = () => {
                     return fetch(self.proxy,
@@ -194,10 +192,10 @@ export class OGC3DTile extends BABYLON.TransformNode{
                                 (this.json.boundingVolume.region[0] + this.json.boundingVolume.region[2]) * 0.5,
                                 (this.json.boundingVolume.region[1] + this.json.boundingVolume.region[3]) * 0.5,
                                 (this.json.boundingVolume.region[4] + this.json.boundingVolume.region[5]) * 0.5,
-                                tempVec1);
+                                OGC3DTile.#tempVec1);
 
-                            tempQuaternion.setFromUnitVectors(tempVec1.normalize(), upVector.normalize());
-                            self.applyQuaternion(tempQuaternion);
+                            OGC3DTile.#tempQuaternion.setFromUnitVectors(OGC3DTile.#tempVec1.normalize(), OGC3DTile.#upVector.normalize());
+                            self.applyQuaternion(OGC3DTile.#tempQuaternion);
                         }
 
                         self.translateX(-tempSphere.center.x * self.scale.x);
@@ -253,12 +251,12 @@ export class OGC3DTile extends BABYLON.TransformNode{
         if (!!this.json.boundingVolume) {
             if (!!this.json.boundingVolume.box) {  
                 const values = this.json.boundingVolume.box;
-                var e1 = new BABYLON.Vector3(values[3], values[4], values[5]);
-                var halfWidth = e1.length();
-                var e2 = new BABYLON.Vector3(values[6], values[7], values[8]);
-                var halfHeight = e2.length();
-                var e3 = new BABYLON.Vector3(values[9], values[10], values[11]);
-                var halfDepth = e3.length();
+                const e1 = new BABYLON.Vector3(values[3], values[4], values[5]);
+                const halfWidth = e1.length();
+                const e2 = new BABYLON.Vector3(values[6], values[7], values[8]);
+                const halfHeight = e2.length();
+                const e3 = new BABYLON.Vector3(values[9], values[10], values[11]);
+                const halfDepth = e3.length();
 
                 const radius = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight + halfDepth * halfDepth);       
                 const center = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(values[0], values[2], -values[1]), worldMatrix);
@@ -267,10 +265,10 @@ export class OGC3DTile extends BABYLON.TransformNode{
 
             } else if (!!this.json.boundingVolume.region) {
                 const region = this.json.boundingVolume.region;
-                this.transformWGS84ToCartesian(region[0], region[1], region[4], tempVec1);
-                this.transformWGS84ToCartesian(region[2], region[3], region[5], tempVec2);
-                tempVec1 = BABYLON.Vector3.Lerp(tempVec1, tempVec2, 0.5);
-                this.boundingVolume = BABYLON.CreateFromCenterAndRadius(tempVec1, BABYLON.Vector3.Distance(tempVec1, tempVec2));
+                this.transformWGS84ToCartesian(region[0], region[1], region[4], OGC3DTile.#tempVec1);
+                this.transformWGS84ToCartesian(region[2], region[3], region[5], OGC3DTile.#tempVec2);
+                OGC3DTile.#tempVec1 = BABYLON.Vector3.Lerp(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2, 0.5);
+                this.boundingVolume = BABYLON.CreateFromCenterAndRadius(OGC3DTile.#tempVec1, BABYLON.Vector3.Distance(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2));
 
             } else if (!!this.json.boundingVolume.sphere) {
                 const sphere = this.json.boundingVolume.sphere;
@@ -342,7 +340,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
     }
 
     load() {
-        var self = this;
+        const self = this;
         if (self.deleted) return;
         if (!!self.json.content) {
             let url;
@@ -365,7 +363,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
             }
             url = self.extractQueryParams(url, self.queryParams);
             if (self.queryParams) {
-                var props = "";
+                let props = "";
                 for (let key in self.queryParams) {
                     if (self.queryParams.hasOwnProperty(key)) { // This check is necessary to skip properties from the object's prototype chain
                         props += "&" + key + "=" + self.queryParams[key];
@@ -690,7 +688,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
         if ((!this.hasMeshContent || !this.meshContent || !this.materialVisibility)) {
             if (this.childrenTiles.length > 0) {
                 return this.childrenTiles.every(child => child.isReady());
-                // var allChildrenReady = true;
+                // let allChildrenReady = true;
                 // this.childrenTiles.every(child => {
                 //     if (!child.isReady()) {
                 //         allChildrenReady = false;
@@ -750,18 +748,18 @@ export class OGC3DTile extends BABYLON.TransformNode{
         // ////// return -1 if not in frustum    
         // if (this.boundingVolume instanceof OBB.OBB) {
         //     // box
-        //     // tempSphere.copy(this.boundingVolume.sphere);
-        //     // tempSphere.applyMatrix(this.matrixWorld);
-        //     // if (!camera.isInFrustum(tempSphere, ture)) return -1;
-        //     tempSphere = this.boundingVolume.sphere;
-        //     var inOriginalCameraFrustum = tempSphere.isInFrustum(
+        //     // OGC3DTile.#tempSphere.copy(this.boundingVolume.sphere);
+        //     // OGC3DTile.#tempSphere.applyMatrix(this.matrixWorld);
+        //     // if (!camera.isInFrustum(OGC3DTile.#tempSphere, ture)) return -1;
+        //     OGC3DTile.#tempSphere = this.boundingVolume.sphere;
+        //     const inOriginalCameraFrustum = OGC3DTile.#tempSphere.isInFrustum(
         //         BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix())
         //     );
         //     if (!inOriginalCameraFrustum) return -1;
         // } else 
         if (this.boundingVolume instanceof BABYLON.BoundingSphere) {
-            tempSphere = this.boundingVolume;
-            var inOriginalCameraFrustum = tempSphere.isInFrustum(
+            let tempSphere = this.boundingVolume;
+            const inOriginalCameraFrustum = tempSphere.isInFrustum(
                 BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix())
             );
             if (!inOriginalCameraFrustum) return -1;
@@ -771,7 +769,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
         }
 
         /////// return metric based on geometric error and distance
-        const distance = Math.max(0, BABYLON.Vector3.Distance(camera.position, tempSphere.center) - tempSphere.radius);
+        const distance = Math.max(0, BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius);
         
         if (distance == 0) {
             return 0;
@@ -779,16 +777,16 @@ export class OGC3DTile extends BABYLON.TransformNode{
         const scale = 1; //this.matrixWorld.getMaxScaleOnAxis();       
         let aspect = 1;
         if (!!this.renderer) {
-            // this.renderer.getDrawingBufferSize(rendererSize);
-            rendererSize.x = this.renderer.getRenderWidth(true);
-            rendererSize.y = this.renderer.getRenderHeight(true);       
+            // this.renderer.getDrawingBufferSize(OGC3DTile.#rendererSize);
+            OGC3DTile.#rendererSize.x = this.renderer.getRenderWidth(true);
+            OGC3DTile.#rendererSize.y = this.renderer.getRenderHeight(true);       
             aspect = this.renderer.getScreenAspectRatio();
         }
-        let s = rendererSize.y;
+        let s = OGC3DTile.#rendererSize.y;
         let fov = camera.fov;
         if (aspect < 1) {
             fov *= aspect;
-            s = rendererSize.x;
+            s = OGC3DTile.#rendererSize.x;
         }
 
         let lambda = 2.0 * Math.tan(0.5 * fov) * distance;
@@ -818,19 +816,19 @@ export class OGC3DTile extends BABYLON.TransformNode{
     calculateDistanceToCamera(camera) {
         // if (this.boundingVolume instanceof OBB.OBB) {
         //     // // box
-        //     // tempSphere.copy(this.boundingVolume.sphere);
-        //     // tempSphere.applyMatrix(this.matrixWorld);
-        //     // //if (!frustum.intersectsSphere(tempSphere)) return -1;
-        //     tempSphere = this.boundingVolume.sphere;        
+        //     // OGC3DTile.#tempSphere.copy(this.boundingVolume.sphere);
+        //     // OGC3DTile.#tempSphere.applyMatrix(this.matrixWorld);
+        //     // //if (!frustum.intersectsSphere(OGC3DTile.#tempSphere)) return -1;
+        //     OGC3DTile.#tempSphere = this.boundingVolume.sphere;        
         // } else 
         if (this.boundingVolume instanceof BABYLON.BoundingSphere) {
-            tempSphere = this.boundingVolume;          
+            let tempSphere = this.boundingVolume;          
         }
         else {
             console.error("unsupported shape")
         }
 
-        return Math.max(0, BABYLON.Vector3.Distance(camera.position, tempSphere.center) - tempSphere.radius);
+        return Math.max(0, BABYLON.Vector3.Distance(camera.position, this.boundingVolume.center) - this.boundingVolume.radius);
     }
 
     setGeometricErrorMultiplier(geometricErrorMultiplier) {
@@ -857,7 +855,7 @@ export class OGC3DTile extends BABYLON.TransformNode{
 
 function showError(error) {
     // Create a new div element
-    var errorDiv = document.createElement("div");
+    const errorDiv = document.createElement("div");
 
     // Set its text content
     errorDiv.textContent = error;
@@ -888,7 +886,7 @@ function updateCopyrightLabel(){
     }
 
     // Join the array elements with a comma and a space
-    var list = "";
+    let list = "";
     for(let key in copyright) {
         if(copyright.hasOwnProperty(key) && copyright[key] > 0) { // This checks if the key is actually part of the object and not its prototype.
             list+= key+", ";
@@ -920,11 +918,11 @@ function uuidv4() {
 function dirname(path) {
     // assertPath(path);
     if (path.length === 0) return '.';
-    var code = path.charCodeAt(0);
-    var hasRoot = code === 47 /*/*/;
-    var end = -1;
-    var matchedSlash = true;
-    for (var i = path.length - 1; i >= 1; --i) {
+    let code = path.charCodeAt(0);
+    const hasRoot = code === 47 /*/*/;
+    let end = -1;
+    let matchedSlash = true;
+    for (let i = path.length - 1; i >= 1; --i) {
       code = path.charCodeAt(i);
       if (code === 47 /*/*/) {
           if (!matchedSlash) {
