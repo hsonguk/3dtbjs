@@ -65,15 +65,15 @@ function setupUI(engine, scene, camera) {
 
     // Latitude Input
     const latInput = createInputRow(mainPanel, 'Latitude:', 'latInput', 'e.g., 40.7128');
-    latInput.text = '41.850157'; //"51.50073844249350"; // Default value
+    latInput.text = '51.50073844249350'; //'41.850157'; // Default value
 
     // Longitude Input
     const lonInput = createInputRow(mainPanel, 'Longitude:', 'lonInput', 'e.g., -74.0060');
-    lonInput.text = '78.185370'; //"-0.12462623169077370"; // Default value
+    lonInput.text = '-0.12462623169077370'; //'78.185370'; // Default value
 
     // Altitude Input
     const altInput = createInputRow(mainPanel, 'Altitude:', 'altInput', 'e.g., 100 (meters)');
-    altInput.text = '4000'; //"300"; // Default value
+    altInput.text = '300'; //'4000'; // Default value
 
     // Key Input
     const keyInput = createInputRow(mainPanel, 'API Key:', 'keyInput', 'Enter your key', false);
@@ -339,7 +339,7 @@ var createScene = function () {
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.zoomToMouseLocation = true;
     camera.wheelDeltaPercentage = 0.1;
-    camera.panningSensibility = 100;
+    camera.panningSensibility = 10;
 
     camera.attachControl(canvas, true);
     var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);

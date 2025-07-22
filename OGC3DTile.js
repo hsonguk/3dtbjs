@@ -1,4 +1,4 @@
-import { TileLoader } from "./TileLoader.js";
+import { TileLoader } from './TileLoader.js';
 
 let averageTime = 0;
 let numTiles = 0;
@@ -72,9 +72,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
         }
         this.displayCopyright = properties.displayCopyright;
         // set properties general to the entire tileset
-        this.geometricErrorMultiplier = properties.geometricErrorMultiplier
-            ? properties.geometricErrorMultiplier
-            : 1.0;
+        this.geometricErrorMultiplier = properties.geometricErrorMultiplier ? properties.geometricErrorMultiplier : 1.0;
 
         this.scene = properties.scene;
         this.renderer = properties.renderer;
@@ -193,7 +191,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
                             // if (self.boundingVolume instanceof BBO.BBO) {
                             //     // box
                             //     tempSphere.copy(self.boundingVolume.sphere);
-                            // } else 
+                            // } else
                             if (self.boundingVolume instanceof BABYLON.BoundingSphere) {
                                 //sphere
                                 tempSphere.copy(self.boundingVolume);
@@ -382,7 +380,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
                 if (!urlRegex.test(url)) {
                     url = self.assembleURL(self.rootPath, url);
                 }
-            } 
+            }
             url = self.extractQueryParams(url, self.queryParams);
             if (self.queryParams) {
                 let props = '';
