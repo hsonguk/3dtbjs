@@ -1,9 +1,33 @@
 import { TileLoader } from './TileLoader.js';
+import { OGC3DTileRefactored } from './src/tile/ogc-3d-tile-refactored.js';
+import { globalCopyrightManager } from './src/managers/copyright-manager.js';
+import { showError } from './src/managers/error-manager.js';
+import { assembleURL, extractQueryParams } from './src/utils/url-utils.js';
+import { transformWGS84ToCartesian } from './src/geometry/coordinate-transform.js';
 
-let averageTime = 0;
-let numTiles = 0;
+// Global copyright management - maintained for backward compatibility
 let copyrightDiv;
 const copyright = {};
+
+// Utility function for backward compatibility
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// Utility function for backward compatibility
+function dirname(path) {
+    const lastSlashIndex = path.lastIndexOf('/');
+    return lastSlashIndex > 0 ? path.substring(0, lastSlashIndex) : path;
+}
+
+// Copyright update function for backward compatibility
+function updateCopyrightLabel() {
+    globalCopyrightManager.updateDisplay();
+}
 
 export class OGC3DTile extends BABYLON.TransformNode {
     static #tempSphere = new BABYLON.BoundingSphere(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 1, 0));
@@ -54,18 +78,14 @@ export class OGC3DTile extends BABYLON.TransformNode {
             this.tileLoader = properties.tileLoader;
         } else {
             const tileLoaderOptions = {};
-            tileLoaderOptions.meshCallback = !properties.meshCallback
-                ? (mesh) => {
-                      // mesh.material.wireframe = false;
-                      // mesh.material.side = THREE.DoubleSide;
-                  }
-                : properties.meshCallback;
-            tileLoaderOptions.pointsCallback = !properties.pointsCallback
-                ? (points) => {
-                      // points.material.size = 0.1;
-                      // points.material.sizeAttenuation = true;
-                  }
-                : properties.pointsCallback;
+            tileLoaderOptions.meshCallback = properties.meshCallback || ((mesh) => {
+                // Default mesh processing - placeholder for future implementation
+                console.debug('Processing mesh:', mesh);
+            });
+            tileLoaderOptions.pointsCallback = properties.pointsCallback || ((points) => {
+                // Default points processing - placeholder for future implementation
+                console.debug('Processing points:', points);
+            });
             tileLoaderOptions.proxy = this.proxy;
             tileLoaderOptions.scene = properties.scene;
             this.tileLoader = new TileLoader(tileLoaderOptions);
@@ -888,91 +908,10 @@ export class OGC3DTile extends BABYLON.TransformNode {
     }
 }
 
-function showError(error) {
-    // Create a new div element
-    const errorDiv = document.createElement('div');
+// showError function is now imported from error-manager.js
 
-    // Set its text content
-    errorDiv.textContent = error;
+// updateCopyrightLabel function is now defined above for backward compatibility
 
-    // Set styles
-    errorDiv.style.position = 'fixed'; // Fix position to the viewport
-    errorDiv.style.top = '10px'; // Set top position
-    errorDiv.style.left = '50%'; // Center horizontally
-    errorDiv.style.transform = 'translateX(-50%)'; // Make sure it's centered accurately
-    errorDiv.style.padding = '10px'; // Add some padding
-    errorDiv.style.backgroundColor = '#ff8800'; // Set a background color
-    errorDiv.style.color = '#ffffff'; // Set a text color
-    errorDiv.style.zIndex = '9999'; // Make sure it's on top of other elements
+// uuidv4 function is already defined above for backward compatibility
 
-    // Append the new div to the body
-    document.body.appendChild(errorDiv);
-
-    // After 3 seconds, remove the error message
-    setTimeout(function () {
-        errorDiv.remove();
-    }, 8000);
-}
-
-function updateCopyrightLabel() {
-    // Create a new div
-    if (!copyrightDiv) {
-        copyrightDiv = document.createElement('div');
-    }
-
-    // Join the array elements with a comma and a space
-    let list = '';
-    for (let key in copyright) {
-        if (Object.prototype.hasOwnProperty.call(copyright, key) && copyright[key] > 0) {
-            // This checks if the key is actually part of the object and not its prototype.
-            list += key + ', ';
-        }
-    }
-
-    // Set the text content of the div
-    copyrightDiv.textContent = list;
-
-    // Style the div
-    copyrightDiv.style.position = 'fixed';
-    copyrightDiv.style.bottom = '20px';
-    copyrightDiv.style.left = '20px';
-    copyrightDiv.style.color = 'white';
-    copyrightDiv.style.textShadow =
-        '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
-    copyrightDiv.style.padding = '10px';
-    copyrightDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'; // semi-transparent black background
-
-    // Append the div to the body of the document
-    document.body.appendChild(copyrightDiv);
-}
-
-function uuidv4() {
-    return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
-        (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
-    );
-}
-
-function dirname(path) {
-    // assertPath(path);
-    if (path.length === 0) return '.';
-    let code = path.charCodeAt(0);
-    const hasRoot = code === 47; /*/*/
-    let end = -1;
-    let matchedSlash = true;
-    for (let i = path.length - 1; i >= 1; --i) {
-        code = path.charCodeAt(i);
-        if (code === 47 /*/*/) {
-            if (!matchedSlash) {
-                end = i;
-                break;
-            }
-        } else {
-            // We saw the first non-path separator
-            matchedSlash = false;
-        }
-    }
-
-    if (end === -1) return hasRoot ? '/' : '.';
-    if (hasRoot && end === 1) return '//';
-    return path.slice(0, end);
-}
+// dirname function is already defined above for backward compatibility
