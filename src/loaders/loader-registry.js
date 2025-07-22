@@ -18,7 +18,7 @@ export class LoaderRegistry {
         if (!loader.load || typeof loader.load !== 'function') {
             throw new Error('Loader must implement load() method');
         }
-        
+
         this.loaders.set(name, loader);
     }
 
@@ -34,7 +34,7 @@ export class LoaderRegistry {
                 return loader;
             }
         }
-        
+
         throw new Error(`No loader found for file type: ${path}`);
     }
 

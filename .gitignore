@@ -9,3 +9,6 @@ yarn-error.log*
 # Misc
 .DS_Store
 plan.md
+
+# Kiro IDE
+.kiro/
