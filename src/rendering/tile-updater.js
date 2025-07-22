@@ -12,7 +12,7 @@ export class TileUpdater {
     constructor(config = {}) {
         this.config = config;
         this.lodCalculator = new LODCalculator(config);
-        
+
         // Pre-bind methods to avoid recreation
         this.updateTree = this.updateTree.bind(this);
         this.updateNodeVisibility = this.updateNodeVisibility.bind(this);
@@ -26,7 +26,7 @@ export class TileUpdater {
      */
     update(tile, camera) {
         const visibilityBeforeUpdate = tile.materialVisibility;
-        
+
         // Calculate update metric
         if (tile.boundingVolume && tile.geometricError) {
             tile.metric = this.lodCalculator.calculateUpdateMetric(tile, camera);
@@ -52,14 +52,14 @@ export class TileUpdater {
         if (metric < 0 && tile.hasMeshContent) return;
 
         // Check occlusion culling
-        if (tile.occlusionCullingService && 
-            tile.hasMeshContent && 
+        if (tile.occlusionCullingService &&
+            tile.hasMeshContent &&
             !tile.occlusionCullingService.hasID(tile.colorID)) {
             return;
         }
 
         // Determine if we should load children
-        const shouldLoadChildren = !tile.hasMeshContent || 
+        const shouldLoadChildren = !tile.hasMeshContent ||
             (this.lodCalculator.shouldRefine(metric, tile.geometricError) && tile.meshContent);
 
         if (shouldLoadChildren && tile.json && tile.json.children) {
@@ -76,7 +76,7 @@ export class TileUpdater {
         if (!tile.hasMeshContent || !tile.meshContent) return;
 
         const shouldBeVisible = this.lodCalculator.shouldBeVisible(tile, metric);
-        
+
         if (metric < 0) {
             tile.inFrustum = false;
             tile.changeContentVisibility(tile.loadOutsideView);

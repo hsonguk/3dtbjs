@@ -206,7 +206,7 @@ function setupTileService(engine, scene, camera, data) {
     const tileMapRootNode = new BABYLON.TransformNode('TileMapRoot', scene);
     const euler = latLongToEulerAngles(geoLatLongA[0] * 0.0174533, geoLatLongA[1] * 0.0174533);
     tileMapRootNode.rotationQuaternion = euler;
-    
+
     const tileMapNode = new BABYLON.TransformNode('TileMap', scene);
     tileMapNode.parent = tileMapRootNode;
 
@@ -291,7 +291,7 @@ const createScene = function () {
     // Lighting setup
     const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 0.7;
-    
+
     // Create a reference sphere (kept for visual reference)
     const referenceSphere = BABYLON.Mesh.CreateSphere('referenceSphere', 16, 2, scene);
     console.debug('Reference sphere created:', referenceSphere);
@@ -304,7 +304,7 @@ const createScene = function () {
 // Main initialization function
 async function initFunction() {
     console.log('initFunction started');
-    
+
     const asyncEngineCreation = async function () {
         try {
             return createDefaultEngine();
@@ -317,14 +317,14 @@ async function initFunction() {
     try {
         engine = await asyncEngineCreation();
         console.log('Engine created');
-        
+
         if (!engine) {
             throw new Error('Engine should not be null');
         }
-        
+
         startRenderLoop(engine);
         console.log('Render loop started');
-        
+
         scene = createScene();
         console.log('Scene created');
         sceneToRender = scene;
@@ -333,7 +333,7 @@ async function initFunction() {
         window.addEventListener('resize', function () {
             engine.resize();
         });
-        
+
     } catch (error) {
         console.error('Initialization failed:', error);
     }
