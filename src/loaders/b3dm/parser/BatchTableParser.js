@@ -1,8 +1,8 @@
 import { BinaryReader } from '../utils/BinaryReader.js';
 import { TypedArrayUtils } from '../utils/TypedArrayUtils.js';
-import { 
-    B3dmError, 
-    B3DM_ERROR_CODES, 
+import {
+    B3dmError,
+    B3DM_ERROR_CODES,
     B3DM_HEADER_BYTE_LENGTH,
     COMPONENT_TYPES,
     DATA_TYPES
@@ -38,9 +38,9 @@ export class BatchTableParser {
 
             // Parse JSON portion
             const jsonData = this.parseJSON(arrayBuffer, jsonOffset, header.batchTableJSONByteLength);
-            
+
             // Parse binary portion if present
-            const binaryData = header.batchTableBinaryByteLength > 0 ? 
+            const binaryData = header.batchTableBinaryByteLength > 0 ?
                 this.parseBinary(arrayBuffer, binaryOffset, header.batchTableBinaryByteLength) : null;
 
             // Create batch table object
@@ -57,7 +57,7 @@ export class BatchTableParser {
             if (error instanceof B3dmError) {
                 throw error;
             }
-            
+
             throw new B3dmError(
                 `Failed to parse batch table: ${error.message}`,
                 B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
@@ -82,16 +82,16 @@ export class BatchTableParser {
         try {
             const reader = new BinaryReader(arrayBuffer, offset, length);
             const jsonString = reader.readString(length, 'utf-8');
-            
+
             // Remove any null padding
             const cleanJsonString = jsonString.replace(/\0+$/, '');
-            
+
             if (cleanJsonString.trim() === '') {
                 return {};
             }
 
             const parsedJson = JSON.parse(cleanJsonString);
-            
+
             // Validate JSON structure depth
             if (this.options.allowHierarchicalData) {
                 this.validateJsonDepth(parsedJson, 0);
@@ -197,7 +197,7 @@ export class BatchTableParser {
                 const byteOffset = propertyDef.byteOffset;
                 const componentType = propertyDef.componentType || COMPONENT_TYPES.FLOAT;
                 const type = propertyDef.type || DATA_TYPES.SCALAR;
-                
+
                 // For batch table, we need to know the batch count to validate size
                 // This will be validated later when we have the feature table context
                 const elementSize = TypedArrayUtils.calculateByteSize(type, componentType, 1);
@@ -242,8 +242,8 @@ export class BatchTableParser {
                 );
             }
 
-            if (propertyDef.componentType !== undefined && 
-                !Object.values(COMPONENT_TYPES).includes(propertyDef.componentType)) {
+            if (propertyDef.componentType !== undefined &&
+                !this.isValidComponentType(propertyDef.componentType)) {
                 throw new B3dmError(
                     `Invalid componentType for property '${propertyName}': ${propertyDef.componentType}`,
                     B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
@@ -251,7 +251,7 @@ export class BatchTableParser {
                 );
             }
 
-            if (propertyDef.type !== undefined && 
+            if (propertyDef.type !== undefined &&
                 !Object.values(DATA_TYPES).includes(propertyDef.type)) {
                 throw new B3dmError(
                     `Invalid type for property '${propertyName}': ${propertyDef.type}`,
@@ -278,10 +278,32 @@ export class BatchTableParser {
      * @private
      */
     isBinaryPropertyDefinition(propertyDef) {
-        return typeof propertyDef === 'object' && 
-               propertyDef !== null && 
-               !Array.isArray(propertyDef) &&
-               'byteOffset' in propertyDef;
+        return typeof propertyDef === 'object' &&
+            propertyDef !== null &&
+            !Array.isArray(propertyDef) &&
+            'byteOffset' in propertyDef;
+    }
+
+    /**
+     * Checks if a component type is valid (supports both numeric and string types)
+     * @param {number|string} componentType - The component type to validate
+     * @returns {boolean} True if valid
+     * @private
+     */
+    isValidComponentType(componentType) {
+        // Check numeric component types
+        if (typeof componentType === 'number') {
+            return Object.values(COMPONENT_TYPES).includes(componentType);
+        }
+
+        // Check string component types
+        if (typeof componentType === 'string') {
+            const upperType = componentType.toUpperCase();
+            const validStringTypes = ['BYTE', 'UNSIGNED_BYTE', 'SHORT', 'UNSIGNED_SHORT', 'INT', 'UNSIGNED_INT', 'FLOAT', 'DOUBLE'];
+            return validStringTypes.includes(upperType);
+        }
+
+        return false;
     }
 }
 
@@ -308,7 +330,7 @@ export class BatchTable {
         for (const [propertyName, propertyDef] of Object.entries(this.json)) {
             const property = new BatchProperty(propertyName, propertyDef, this.binary);
             this.properties.set(propertyName, property);
-            
+
             // Update batch length based on property length
             const propertyLength = property.getLength();
             if (propertyLength > this.batchLength) {
@@ -392,7 +414,7 @@ export class BatchProperty {
         this.isDirectArray = false;
         this.values = null;
         this.length = 0;
-        
+
         this.parseDefinition();
     }
 
@@ -488,16 +510,16 @@ export class BatchProperty {
         }
 
         const requiredBytes = TypedArrayUtils.calculateByteSize(this.type, this.componentType, this.count);
-        
+
         if (this.byteOffset + requiredBytes > binaryData.byteLength) {
             throw new B3dmError(
                 `Property '${this.name}' binary access out of bounds: need ${requiredBytes} bytes at offset ${this.byteOffset}, binary data size is ${binaryData.byteLength}`,
                 B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
-                { 
+                {
                     propertyName: this.name,
                     byteOffset: this.byteOffset,
                     requiredBytes,
-                    binaryDataSize: binaryData.byteLength 
+                    binaryDataSize: binaryData.byteLength
                 }
             );
         }

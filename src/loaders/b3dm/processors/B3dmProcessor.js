@@ -111,8 +111,11 @@ export class B3dmProcessor {
             );
         }
 
+        // Preprocess GLTF data to handle CESIUM_RTC extension
+        const processedGltfData = await this.preprocessGltfData(gltfData);
+
         // Create blob URL for Babylon.js to load
-        const assetBlob = new Blob([gltfData], { type: 'model/gltf-binary' });
+        const assetBlob = new Blob([processedGltfData], { type: 'model/gltf-binary' });
         const assetUrl = URL.createObjectURL(assetBlob);
 
         try {
@@ -134,6 +137,185 @@ export class B3dmProcessor {
     }
 
     /**
+     * Preprocesses GLTF data to handle unsupported extensions like CESIUM_RTC
+     * @param {ArrayBuffer} gltfData - The original GLTF data
+     * @returns {Promise<ArrayBuffer>} The processed GLTF data
+     * @private
+     */
+    async preprocessGltfData(gltfData) {
+        try {
+            // Check if this is a GLB file
+            const dataView = new DataView(gltfData);
+            const magic = dataView.getUint32(0, true);
+            
+            if (magic === 0x46546C67) { // "glTF" magic number for GLB
+                return this.preprocessGlbData(gltfData);
+            } else {
+                // Assume JSON GLTF
+                return this.preprocessJsonGltfData(gltfData);
+            }
+        } catch (error) {
+            console.warn('Failed to preprocess GLTF data, using original:', error.message);
+            return gltfData;
+        }
+    }
+
+    /**
+     * Preprocesses GLB data to remove CESIUM_RTC extension
+     * @param {ArrayBuffer} glbData - The GLB data
+     * @returns {ArrayBuffer} The processed GLB data
+     * @private
+     */
+    preprocessGlbData(glbData) {
+        const dataView = new DataView(glbData);
+        
+        // Read GLB header
+        const magic = dataView.getUint32(0, true);
+        const version = dataView.getUint32(4, true);
+        const length = dataView.getUint32(8, true);
+        
+        if (magic !== 0x46546C67 || version !== 2) {
+            return glbData; // Not a valid GLB v2, return as-is
+        }
+        
+        // Read first chunk (JSON)
+        const jsonChunkLength = dataView.getUint32(12, true);
+        const jsonChunkType = dataView.getUint32(16, true);
+        
+        if (jsonChunkType !== 0x4E4F534A) { // "JSON"
+            return glbData; // Invalid GLB structure
+        }
+        
+        // Extract JSON data
+        const jsonData = new Uint8Array(glbData, 20, jsonChunkLength);
+        const jsonString = new TextDecoder().decode(jsonData);
+        
+        try {
+            const gltf = JSON.parse(jsonString);
+            
+            // Remove CESIUM_RTC extension
+            if (gltf.extensionsUsed) {
+                gltf.extensionsUsed = gltf.extensionsUsed.filter(ext => ext !== 'CESIUM_RTC');
+                if (gltf.extensionsUsed.length === 0) {
+                    delete gltf.extensionsUsed;
+                }
+            }
+            
+            if (gltf.extensionsRequired) {
+                gltf.extensionsRequired = gltf.extensionsRequired.filter(ext => ext !== 'CESIUM_RTC');
+                if (gltf.extensionsRequired.length === 0) {
+                    delete gltf.extensionsRequired;
+                }
+            }
+            
+            // Remove CESIUM_RTC extension from nodes
+            if (gltf.nodes) {
+                gltf.nodes.forEach(node => {
+                    if (node.extensions && node.extensions.CESIUM_RTC) {
+                        delete node.extensions.CESIUM_RTC;
+                        if (Object.keys(node.extensions).length === 0) {
+                            delete node.extensions;
+                        }
+                    }
+                });
+            }
+            
+            // Create new JSON string
+            const newJsonString = JSON.stringify(gltf);
+            const newJsonData = new TextEncoder().encode(newJsonString);
+            
+            // Pad to 4-byte boundary
+            const padding = (4 - (newJsonData.length % 4)) % 4;
+            const paddedJsonData = new Uint8Array(newJsonData.length + padding);
+            paddedJsonData.set(newJsonData);
+            for (let i = newJsonData.length; i < paddedJsonData.length; i++) {
+                paddedJsonData[i] = 0x20; // Space character for JSON padding
+            }
+            
+            // Calculate new GLB size
+            const binaryChunkStart = 20 + jsonChunkLength;
+            const binaryChunkSize = glbData.byteLength - binaryChunkStart;
+            const newGlbSize = 20 + paddedJsonData.length + binaryChunkSize;
+            
+            // Create new GLB
+            const newGlbData = new ArrayBuffer(newGlbSize);
+            const newDataView = new DataView(newGlbData);
+            
+            // Write GLB header
+            newDataView.setUint32(0, magic, true);
+            newDataView.setUint32(4, version, true);
+            newDataView.setUint32(8, newGlbSize, true);
+            
+            // Write JSON chunk header
+            newDataView.setUint32(12, paddedJsonData.length, true);
+            newDataView.setUint32(16, jsonChunkType, true);
+            
+            // Write JSON data
+            new Uint8Array(newGlbData, 20, paddedJsonData.length).set(paddedJsonData);
+            
+            // Copy binary chunk if it exists
+            if (binaryChunkSize > 0) {
+                new Uint8Array(newGlbData, 20 + paddedJsonData.length).set(
+                    new Uint8Array(glbData, binaryChunkStart)
+                );
+            }
+            
+            return newGlbData;
+            
+        } catch (error) {
+            console.warn('Failed to process GLB JSON, using original:', error.message);
+            return glbData;
+        }
+    }
+
+    /**
+     * Preprocesses JSON GLTF data to remove CESIUM_RTC extension
+     * @param {ArrayBuffer} jsonGltfData - The JSON GLTF data
+     * @returns {ArrayBuffer} The processed JSON GLTF data
+     * @private
+     */
+    preprocessJsonGltfData(jsonGltfData) {
+        try {
+            const jsonString = new TextDecoder().decode(jsonGltfData);
+            const gltf = JSON.parse(jsonString);
+            
+            // Remove CESIUM_RTC extension (same logic as GLB)
+            if (gltf.extensionsUsed) {
+                gltf.extensionsUsed = gltf.extensionsUsed.filter(ext => ext !== 'CESIUM_RTC');
+                if (gltf.extensionsUsed.length === 0) {
+                    delete gltf.extensionsUsed;
+                }
+            }
+            
+            if (gltf.extensionsRequired) {
+                gltf.extensionsRequired = gltf.extensionsRequired.filter(ext => ext !== 'CESIUM_RTC');
+                if (gltf.extensionsRequired.length === 0) {
+                    delete gltf.extensionsRequired;
+                }
+            }
+            
+            // Remove CESIUM_RTC extension from nodes
+            if (gltf.nodes) {
+                gltf.nodes.forEach(node => {
+                    if (node.extensions && node.extensions.CESIUM_RTC) {
+                        delete node.extensions.CESIUM_RTC;
+                        if (Object.keys(node.extensions).length === 0) {
+                            delete node.extensions;
+                        }
+                    }
+                });
+            }
+            
+            const newJsonString = JSON.stringify(gltf);
+            return new TextEncoder().encode(newJsonString);
+            
+        } catch (error) {
+            console.warn('Failed to process JSON GLTF, using original:', error.message);
+            return jsonGltfData;
+        }
+    }
+
+    /**
      * Applies RTC (Relative to Center) transformation
      * @param {BABYLON.AssetContainer} container - The asset container
      * @param {Array<number>} rtcCenter - The RTC center coordinates [x, y, z]
@@ -142,10 +324,14 @@ export class B3dmProcessor {
     applyRtcTransformation(container, rtcCenter) {
         if (!rtcCenter || rtcCenter.length !== 3) return;
 
+        console.log('Applying RTC transformation with center:', rtcCenter);
         const translation = new BABYLON.Vector3(rtcCenter[0], rtcCenter[1], rtcCenter[2]);
+        console.log('Translation vector:', translation);
         
         container.meshes.forEach(mesh => {
+            const originalPosition = mesh.position.clone();
             mesh.position.addInPlace(translation);
+            console.log(`Mesh ${mesh.name} position: ${originalPosition} -> ${mesh.position}`);
         });
     }
 

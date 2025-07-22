@@ -16,7 +16,8 @@ export const COMPONENT_TYPES = {
     UNSIGNED_SHORT: 5123,
     INT: 5124,
     UNSIGNED_INT: 5125,
-    FLOAT: 5126
+    FLOAT: 5126,
+    DOUBLE: 5130
 };
 
 // Data Types (from glTF specification)
@@ -38,7 +39,8 @@ export const COMPONENT_TYPE_SIZES = {
     [COMPONENT_TYPES.UNSIGNED_SHORT]: 2,
     [COMPONENT_TYPES.INT]: 4,
     [COMPONENT_TYPES.UNSIGNED_INT]: 4,
-    [COMPONENT_TYPES.FLOAT]: 4
+    [COMPONENT_TYPES.FLOAT]: 4,
+    [COMPONENT_TYPES.DOUBLE]: 8
 };
 
 // Data type component counts
@@ -85,34 +87,34 @@ export class B3dmError extends Error {
     getRecoveryPlan() {
         switch (this.code) {
             case B3DM_ERROR_CODES.INVALID_MAGIC:
-                return { 
-                    canRecover: false, 
-                    suggestion: 'File is not a valid B3DM format' 
+                return {
+                    canRecover: false,
+                    suggestion: 'File is not a valid B3DM format'
                 };
             case B3DM_ERROR_CODES.UNSUPPORTED_VERSION:
-                return { 
-                    canRecover: false, 
-                    suggestion: 'B3DM version is not supported' 
+                return {
+                    canRecover: false,
+                    suggestion: 'B3DM version is not supported'
                 };
             case B3DM_ERROR_CODES.FEATURE_TABLE_ERROR:
-                return { 
-                    canRecover: true, 
-                    suggestion: 'Continue loading without feature table data' 
+                return {
+                    canRecover: true,
+                    suggestion: 'Continue loading without feature table data'
                 };
             case B3DM_ERROR_CODES.BATCH_TABLE_ERROR:
-                return { 
-                    canRecover: true, 
-                    suggestion: 'Continue loading without batch table data' 
+                return {
+                    canRecover: true,
+                    suggestion: 'Continue loading without batch table data'
                 };
             case B3DM_ERROR_CODES.FILE_TOO_LARGE:
-                return { 
-                    canRecover: false, 
-                    suggestion: 'Increase maxFileSize configuration or use streaming' 
+                return {
+                    canRecover: false,
+                    suggestion: 'Increase maxFileSize configuration or use streaming'
                 };
             default:
-                return { 
-                    canRecover: false, 
-                    suggestion: 'Unable to process B3DM file' 
+                return {
+                    canRecover: false,
+                    suggestion: 'Unable to process B3DM file'
                 };
         }
     }
@@ -124,22 +126,22 @@ export const B3DM_DEFAULT_CONFIG = {
     validateHeader: true,
     strictMode: false,
     maxFileSize: 100 * 1024 * 1024, // 100MB
-    
+
     // Processing options
     applyRtcCenter: true,
     processAnimations: true,
     optimizeMaterials: true,
-    
+
     // Performance options
     useWorkers: false,
     chunkSize: 1024 * 1024, // 1MB chunks
     concurrentLimit: 4,
-    
+
     // Babylon.js integration
     createAssetContainer: true,
     freezeMaterials: true,
     optimizeVertices: false,
-    
+
     // Debugging
     enableProfiling: false,
     logLevel: 'warn'

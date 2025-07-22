@@ -66,11 +66,11 @@ function setupUI(engine, scene, camera) {
 
     // Latitude Input
     const latInput = createInputRow(mainPanel, 'Latitude:', 'latInput', 'e.g., 40.7128');
-    latInput.text = '51.50073844249350'; //'41.850157'; // Default value
+    latInput.text = '43.05081502061126'; //'51.50073844249350'; //'41.850157'; // Default value
 
     // Longitude Input
     const lonInput = createInputRow(mainPanel, 'Longitude:', 'lonInput', 'e.g., -74.0060');
-    lonInput.text = '-0.12462623169077370'; //'78.185370'; // Default value
+    lonInput.text = '141.24005536005612';//'-0.12462623169077370'; //'78.185370'; // Default value
 
     // Altitude Input
     const altInput = createInputRow(mainPanel, 'Altitude:', 'altInput', 'e.g., 100 (meters)');
@@ -243,8 +243,8 @@ function initTileset(engine, scene, camera, tileMapNode, apikey) {
 
     // Create OGC 3D Tile with optimized configuration
     const ogc3DTile = new OGC3DTile({
-        url: 'https://tile.googleapis.com/v1/3dtiles/root.json',
-        queryParams: { key: apikey },
+        url: 'https://assets.cms.plateau.reearth.io/assets/b8/314602-4b39-4d5f-be2d-a0b17a3e3c21/01100_sapporo-shi_city_2020_citygml_6_op_bldg_3dtiles_01101_chuo-ku_lod1/tileset.json',//'https://tile.googleapis.com/v1/3dtiles/root.json',
+        //queryParams: { key: apikey },
         yUp: true,
         geometricErrorMultiplier: 0.5,
         loadOutsideView: false,

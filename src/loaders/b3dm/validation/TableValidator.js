@@ -1,4 +1,4 @@
-import { 
+import {
     FEATURE_TABLE_PROPERTIES,
     COMPONENT_TYPES,
     DATA_TYPES,
@@ -42,20 +42,20 @@ export class TableValidator {
         try {
             // Validate basic structure
             this.validateFeatureTableStructure(featureTable, result);
-            
+
             // Validate required properties
             this.validateFeatureTableProperties(featureTable, result);
-            
+
             // Validate binary data consistency
             if (this.options.validateBinaryData && featureTable.hasBinaryData()) {
                 this.validateFeatureTableBinary(featureTable, header, result);
             }
-            
+
             // Validate property types
             if (this.options.validatePropertyTypes) {
                 this.validateFeatureTablePropertyTypes(featureTable, result);
             }
-            
+
             // Performance and size checks
             this.checkFeatureTablePerformance(featureTable, result);
 
@@ -86,22 +86,22 @@ export class TableValidator {
         try {
             // Validate basic structure
             this.validateBatchTableStructure(batchTable, result);
-            
+
             // Validate consistency with feature table
             if (featureTable) {
                 this.validateBatchTableConsistency(batchTable, featureTable, result);
             }
-            
+
             // Validate binary data
             if (this.options.validateBinaryData && batchTable.binary) {
                 this.validateBatchTableBinary(batchTable, header, result);
             }
-            
+
             // Validate property definitions
             if (this.options.validatePropertyTypes) {
                 this.validateBatchTableProperties(batchTable, result);
             }
-            
+
             // Performance checks
             this.checkBatchTablePerformance(batchTable, result);
 
@@ -147,7 +147,7 @@ export class TableValidator {
      */
     validateFeatureTableProperties(featureTable, result) {
         const json = featureTable.json;
-        
+
         // Validate BATCH_LENGTH
         const batchLength = json[FEATURE_TABLE_PROPERTIES.BATCH_LENGTH];
         if (batchLength !== undefined) {
@@ -173,7 +173,7 @@ export class TableValidator {
                         result.errors.push(`Invalid RTC_CENTER[${i}]: ${rtcCenter[i]} (must be finite number)`);
                     }
                 }
-                
+
                 // Check for very large coordinates
                 const magnitude = Math.sqrt(rtcCenter[0] ** 2 + rtcCenter[1] ** 2 + rtcCenter[2] ** 2);
                 if (magnitude > 1e10) {
@@ -192,7 +192,7 @@ export class TableValidator {
      */
     validateFeatureTableBinary(featureTable, header, result) {
         const binary = featureTable.binary;
-        
+
         if (!binary && header.featureTableBinaryByteLength > 0) {
             result.errors.push('Header indicates binary data but none found');
             return;
@@ -254,7 +254,7 @@ export class TableValidator {
      */
     validateBatchTableConsistency(batchTable, featureTable, result) {
         const batchLength = featureTable.getBatchLength();
-        
+
         if (batchLength === undefined || batchLength === 0) {
             result.warnings.push('Batch table present but BATCH_LENGTH is 0 or undefined');
             return;
@@ -266,12 +266,12 @@ export class TableValidator {
                 // This is a binary property - validate count matches batch length
                 const componentType = propertyDef.componentType || COMPONENT_TYPES.FLOAT;
                 const type = propertyDef.type || DATA_TYPES.SCALAR;
-                
+
                 try {
                     const expectedSize = TypedArrayUtils.calculateByteSize(type, componentType, batchLength);
-                    const availableSize = batchTable.binary ? 
+                    const availableSize = batchTable.binary ?
                         batchTable.binary.byteLength - propertyDef.byteOffset : 0;
-                    
+
                     if (availableSize < expectedSize) {
                         result.errors.push(`Batch property ${propertyName}: insufficient binary data (need ${expectedSize}, have ${availableSize})`);
                     }
@@ -291,7 +291,7 @@ export class TableValidator {
      */
     validateBatchTableBinary(batchTable, header, result) {
         const binary = batchTable.binary;
-        
+
         if (!binary && header.batchTableBinaryByteLength > 0) {
             result.errors.push('Header indicates batch table binary data but none found');
             return;
@@ -327,7 +327,7 @@ export class TableValidator {
         for (const [propertyName, propertyDef] of Object.entries(featureTable.json)) {
             if (typeof propertyDef === 'object' && propertyDef.byteOffset !== undefined) {
                 const byteOffset = propertyDef.byteOffset;
-                
+
                 if (byteOffset < 0 || byteOffset >= binary.byteLength) {
                     result.errors.push(`Property ${propertyName}: invalid byteOffset ${byteOffset} (binary size: ${binary.byteLength})`);
                     continue;
@@ -337,7 +337,7 @@ export class TableValidator {
                 const componentType = propertyDef.componentType;
                 const type = propertyDef.type;
 
-                if (componentType !== undefined && !Object.values(COMPONENT_TYPES).includes(componentType)) {
+                if (componentType !== undefined && !this.isValidComponentType(componentType)) {
                     result.errors.push(`Property ${propertyName}: invalid componentType ${componentType}`);
                 }
 
@@ -367,7 +367,7 @@ export class TableValidator {
                 result.errors.push(`${context} property ${propertyName}: negative byteOffset ${property.byteOffset}`);
             }
 
-            if (property.componentType !== undefined && !Object.values(COMPONENT_TYPES).includes(property.componentType)) {
+            if (property.componentType !== undefined && !this.isValidComponentType(property.componentType)) {
                 result.errors.push(`${context} property ${propertyName}: invalid componentType ${property.componentType}`);
             }
 
@@ -392,7 +392,7 @@ export class TableValidator {
                     result.errors.push(`Batch property ${propertyName}: invalid byteOffset ${propertyDef.byteOffset}`);
                 }
 
-                if (propertyDef.componentType !== undefined && !Object.values(COMPONENT_TYPES).includes(propertyDef.componentType)) {
+                if (propertyDef.componentType !== undefined && !this.isValidComponentType(propertyDef.componentType)) {
                     result.errors.push(`Batch property ${propertyName}: invalid componentType ${propertyDef.componentType}`);
                 }
 
@@ -412,7 +412,7 @@ export class TableValidator {
      */
     checkFeatureTablePerformance(featureTable, result) {
         const summary = featureTable.getSummary();
-        
+
         if (summary.propertyCount > 50) {
             result.warnings.push(`Many properties in feature table: ${summary.propertyCount} - consider consolidation`);
         }
@@ -430,7 +430,7 @@ export class TableValidator {
      */
     checkBatchTablePerformance(batchTable, result) {
         const propertyCount = Object.keys(batchTable.json).length;
-        
+
         if (propertyCount > 100) {
             result.warnings.push(`Many properties in batch table: ${propertyCount} - may impact performance`);
         }
@@ -438,5 +438,27 @@ export class TableValidator {
         if (batchTable.binary && batchTable.binary.byteLength > 50 * 1024 * 1024) { // 50MB
             result.warnings.push(`Large batch table binary data: ${(batchTable.binary.byteLength / 1024 / 1024).toFixed(1)}MB`);
         }
+    }
+
+    /**
+     * Checks if a component type is valid (supports both numeric and string types)
+     * @param {number|string} componentType - The component type to validate
+     * @returns {boolean} True if valid
+     * @private
+     */
+    isValidComponentType(componentType) {
+        // Check numeric component types
+        if (typeof componentType === 'number') {
+            return Object.values(COMPONENT_TYPES).includes(componentType);
+        }
+
+        // Check string component types
+        if (typeof componentType === 'string') {
+            const upperType = componentType.toUpperCase();
+            const validStringTypes = ['BYTE', 'UNSIGNED_BYTE', 'SHORT', 'UNSIGNED_SHORT', 'INT', 'UNSIGNED_INT', 'FLOAT', 'DOUBLE'];
+            return validStringTypes.includes(upperType);
+        }
+
+        return false;
     }
 }

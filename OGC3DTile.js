@@ -308,7 +308,7 @@ export class OGC3DTile extends BABYLON.TransformNode {
                 this.transformWGS84ToCartesian(region[0], region[1], region[4], OGC3DTile.#tempVec1);
                 this.transformWGS84ToCartesian(region[2], region[3], region[5], OGC3DTile.#tempVec2);
                 OGC3DTile.#tempVec1 = BABYLON.Vector3.Lerp(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2, 0.5);
-                this.boundingVolume = BABYLON.CreateFromCenterAndRadius(
+                this.boundingVolume = BABYLON.BoundingSphere.CreateFromCenterAndRadius(
                     OGC3DTile.#tempVec1,
                     BABYLON.Vector3.Distance(OGC3DTile.#tempVec1, OGC3DTile.#tempVec2)
                 );

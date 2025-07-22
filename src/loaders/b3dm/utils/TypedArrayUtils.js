@@ -14,11 +14,14 @@ import {
 export class TypedArrayUtils {
     /**
      * Gets the TypedArray constructor for a given component type
-     * @param {number} componentType - The component type constant
+     * @param {number|string} componentType - The component type constant or string
      * @returns {Function} The TypedArray constructor
      */
     static getTypedArrayConstructor(componentType) {
-        switch (componentType) {
+        // Normalize component type first
+        const numericComponentType = this.normalizeComponentType(componentType);
+        
+        switch (numericComponentType) {
             case COMPONENT_TYPES.BYTE:
                 return Int8Array;
             case COMPONENT_TYPES.UNSIGNED_BYTE:
@@ -33,30 +36,78 @@ export class TypedArrayUtils {
                 return Uint32Array;
             case COMPONENT_TYPES.FLOAT:
                 return Float32Array;
+            case COMPONENT_TYPES.DOUBLE:
+                return Float64Array;
             default:
                 throw new B3dmError(
-                    `Unsupported component type: ${componentType}`,
+                    `Unsupported component type: ${componentType} (normalized: ${numericComponentType})`,
                     B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
-                    { componentType }
+                    { componentType, numericComponentType }
                 );
         }
     }
 
     /**
      * Gets the byte size for a component type
-     * @param {number} componentType - The component type constant
+     * @param {number|string} componentType - The component type constant or string
      * @returns {number} Size in bytes
      */
     static getComponentTypeSize(componentType) {
-        const size = COMPONENT_TYPE_SIZES[componentType];
+        // Handle string component types (convert to numeric)
+        const numericComponentType = this.normalizeComponentType(componentType);
+        
+        const size = COMPONENT_TYPE_SIZES[numericComponentType];
         if (size === undefined) {
             throw new B3dmError(
-                `Unknown component type: ${componentType}`,
+                `Unknown component type: ${componentType} (normalized: ${numericComponentType})`,
                 B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
-                { componentType }
+                { componentType, numericComponentType }
             );
         }
         return size;
+    }
+
+    /**
+     * Normalizes component type from string or number to numeric value
+     * @param {number|string} componentType - The component type
+     * @returns {number} Numeric component type
+     */
+    static normalizeComponentType(componentType) {
+        // If it's already a number, return as-is
+        if (typeof componentType === 'number') {
+            return componentType;
+        }
+        
+        // Handle string component types
+        if (typeof componentType === 'string') {
+            const upperType = componentType.toUpperCase();
+            switch (upperType) {
+                case 'BYTE':
+                    return COMPONENT_TYPES.BYTE;
+                case 'UNSIGNED_BYTE':
+                    return COMPONENT_TYPES.UNSIGNED_BYTE;
+                case 'SHORT':
+                    return COMPONENT_TYPES.SHORT;
+                case 'UNSIGNED_SHORT':
+                    return COMPONENT_TYPES.UNSIGNED_SHORT;
+                case 'INT':
+                    return COMPONENT_TYPES.INT;
+                case 'UNSIGNED_INT':
+                    return COMPONENT_TYPES.UNSIGNED_INT;
+                case 'FLOAT':
+                    return COMPONENT_TYPES.FLOAT;
+                case 'DOUBLE':
+                    return COMPONENT_TYPES.DOUBLE;
+                default:
+                    throw new B3dmError(
+                        `Unknown string component type: ${componentType}`,
+                        B3DM_ERROR_CODES.BATCH_TABLE_ERROR,
+                        { componentType }
+                    );
+            }
+        }
+        
+        return componentType;
     }
 
     /**
